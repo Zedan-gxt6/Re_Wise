@@ -1,0 +1,51 @@
+<%- include('partials/header') %>
+
+<h1><%= title %> <span class="count-badge"><%= problems.length %></span></h1>
+
+<div class="page-actions">
+    <a href="/" class="btn btn-secondary">Back to Dashboard</a>
+    <% if (problems.length > 0) { %>
+        <a href="/problems/<%= difficulty %>/random" target="_blank" class="btn btn-info">🎲 Choose Random Problem</a>
+    <% } %>
+</div>
+
+<% if (problems.length === 0) { %>
+    <p>No problems found in this category.</p>
+<% } else { %>
+    <div class="problem-list">
+        <% problems.forEach(problem => { %>
+            <div class="problem-card">
+                <h3><%= problem.title %> <% if (problem.status === 'MASTERED') { %> <span class="mastered-badge">Mastered 🎉</span> <% } %></h3>
+                <p><strong>URL:</strong> <a href="<%= problem.url %>" target="_blank"><%= problem.url %></a></p>
+                <p><strong>Rating:</strong> 
+                    <% if (problem.rating === 1) { %> Easy <% } %>
+                    <% if (problem.rating === 2) { %> Medium <% } %>
+                    <% if (problem.rating === 3) { %> Hard <% } %>
+                </p>
+                <p><strong>Time Taken:</strong> <%= problem.time_taken || 'N/A' %></p>
+                <% if (problem.due_date) { %>
+                    <p><strong>Due Date:</strong> <%= new Date(problem.due_date).toLocaleDateString() %></p>
+                <% } %>
+                <% if (problem.code) { %>
+                    <details>
+                        <summary>View Code</summary>
+                        <pre><code><%= problem.code %></code></pre>
+                    </details>
+                <% } %>
+                <div class="actions-row">
+                    <% if (problem.status !== 'MASTERED') { %>
+                        <form action="/problems/<%= difficulty %>/<%= problem.id %>/master" method="POST">
+                            <button type="submit" class="btn btn-success btn-sm">Fix (Mastered)</button>
+                        </form>
+                    <% } %>
+                    <form action="/problems/<%= difficulty %>/<%= problem.id %>/rotate" method="POST">
+                        <input type="number" name="review_days" value="<%= problem.review_days || 1 %>" min="1" required>
+                        <button type="submit" class="btn btn-primary btn-sm">Rotate (Days)</button>
+                    </form>
+                </div>
+            </div>
+        <% }) %>
+    </div>
+<% } %>
+
+<%- include('partials/footer') %>

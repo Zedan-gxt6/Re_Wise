@@ -1,0 +1,78 @@
+<%- include('partials/header') %>
+
+    <h1>Add a New DSA Problem</h1>
+    <p>Log a new problem you've recently solved or want to track.</p>
+
+    <form action="/add" method="POST" class="add-problem-form">
+        
+        <div class="form-group">
+            <label for="title">Problem Title:</label>
+            <input type="text" id="title" name="title" required placeholder="e.g., Two Sum">
+        </div>
+
+        <div class="form-group">
+            <label for="time_taken">Time taken:</label>
+            <input type="text" id="time_taken" name="time_taken" required placeholder="e.g., 2 mins 50 sec">
+        </div>
+
+        <div class="form-group">
+            <label for="url">Problem URL:</label>
+            <input type="url" id="url" name="url" required placeholder="https://leetcode.com/problems/...">
+        </div>
+
+        <div class="form-group">
+            <label for="rating">Difficulty Rating:</label>
+            <select id="rating" name="rating" required>
+                <option value=1>Easy</option>
+                <option value=2>Medium</option>
+                <option value=3>Hard</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="review_days">Review After (Days):</label>
+            <input type="number" id="review_days" name="review_days" required min="1" placeholder="e.g., 3" value="1">
+        </div>
+
+        <div class="form-group">
+            <label for="code">Your Code Approach:</label>
+            <textarea id="code" name="code" rows="10" placeholder="Paste your code here..."></textarea>
+        </div>
+
+        <button type="submit" class="btn">Add Problem</button>
+    </form>
+
+    <script>
+        let timerInterval;
+        let seconds = 0;
+        
+        const timerDisplay = document.getElementById('timerDisplay');
+        const startBtn = document.getElementById('startTimerBtn');
+        const stopBtn = document.getElementById('stopTimerBtn');
+        const timeTakenInput = document.getElementById('time_taken');
+
+        function formatTime(totalSeconds) {
+            const m = Math.floor(totalSeconds / 60).toString().padStart(2, '0');
+            const s = (totalSeconds % 60).toString().padStart(2, '0');
+            return `${m}:${s}`;
+        }
+
+        startBtn.addEventListener('click', () => {
+            startBtn.disabled = true;
+            stopBtn.disabled = false;
+            timerInterval = setInterval(() => {
+                seconds++;
+                const formattedTime = formatTime(seconds);
+                timerDisplay.innerText = formattedTime;
+                timeTakenInput.value = formattedTime;
+            }, 1000);
+        });
+
+        stopBtn.addEventListener('click', () => {
+            clearInterval(timerInterval);
+            startBtn.disabled = false;
+            stopBtn.disabled = true;
+        });
+    </script>
+
+    <%- include('partials/footer') %>
