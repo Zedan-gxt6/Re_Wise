@@ -1,78 +1,284 @@
 <%- include('partials/header') %>
 
-    <h1>Add a New DSA Problem</h1>
-    <p>Log a new problem you've recently solved or want to track.</p>
+<h1>Add a New DSA Problem</h1>
+<p>Log a new problem you've recently solved or want to track.</p>
 
-    <form action="/add" method="POST" class="add-problem-form">
-        
-        <div class="form-group">
-            <label for="title">Problem Title:</label>
-            <input type="text" id="title" name="title" required placeholder="e.g., Two Sum">
+<form action="/add" method="POST" class="add-problem-form">
+
+   <div class="form-group">
+        <label for="url">Problem URL:</label>
+        <input
+            type="url"
+            id="url"
+            name="url"
+            required
+            placeholder="https://leetcode.com/problems/..."
+        >
+    </div>
+
+    <!-- TIMER SECTION -->
+    <div class="form-group">
+        <label>Time Taken</label>
+
+        <div
+            id="timerDisplay"
+            style="
+                font-size: 24px;
+                font-weight: bold;
+                margin-top: 8px;
+                margin-bottom: 10px;
+            "
+        >
+            00:00
         </div>
 
-        <div class="form-group">
-            <label for="time_taken">Time taken:</label>
-            <input type="text" id="time_taken" name="time_taken" required placeholder="e.g., 2 mins 50 sec">
+        <div class="timer-actions">
+            <button type="button" id="startTimerBtn" class="btn btn-secondary btn-sm">
+                Start Timer
+            </button>
+
+            <button type="button" id="stopTimerBtn" class="btn btn-secondary btn-sm" disabled>
+                Stop Timer
+            </button>
+
+            <button type="button" id="resetTimerBtn" class="btn btn-secondary btn-sm">
+                Reset
+            </button>
         </div>
 
-        <div class="form-group">
-            <label for="url">Problem URL:</label>
-            <input type="url" id="url" name="url" required placeholder="https://leetcode.com/problems/...">
+        <div class="timer-adjust-row">
+            <button type="button" class="btn btn-time-adjust btn-sm" data-adjust="-300">-5 min</button>
+            <button type="button" class="btn btn-time-adjust btn-sm" data-adjust="-60">-1 min</button>
+            <button type="button" class="btn btn-time-adjust btn-sm" data-adjust="60">+1 min</button>
+            <button type="button" class="btn btn-time-adjust btn-sm" data-adjust="300">+5 min</button>
         </div>
 
-        <div class="form-group">
-            <label for="rating">Difficulty Rating:</label>
-            <select id="rating" name="rating" required>
-                <option value=1>Easy</option>
-                <option value=2>Medium</option>
-                <option value=3>Hard</option>
-            </select>
-        </div>
+        <label class="time-toggle-card" for="ignoreTime">
+            <input type="checkbox" id="ignoreTime" name="ignore_time">
+            <span>
+                <strong>Don't consider time</strong>
+                <small>Use expected time automatically based on difficulty.</small>
+            </span>
+        </label>
 
-        <div class="form-group">
-            <label for="review_days">Review After (Days):</label>
-            <input type="number" id="review_days" name="review_days" required min="1" placeholder="e.g., 3" value="1">
-        </div>
+        <!-- Hidden field submitted to backend -->
+        <input
+            type="hidden"
+            id="time"
+            name="time"
+            value="0"
+        >
+    </div>
 
-        <div class="form-group">
-            <label for="code">Your Code Approach:</label>
-            <textarea id="code" name="code" rows="10" placeholder="Paste your code here..."></textarea>
-        </div>
+    <div class="form-group">
+        <label for="rating">Independence level | Struggle level | How likely are you to forget this problem approach: </label>
+        <select id="rating" name="rating" required>
+            <option value="" disabled selected>Select according to your parameter</option>
+            <option value="1">Fully Independent | Solved easily | I'll remember longer</option>
+            <option value="2">Took minor hints | Struggled a bit | I may forget</option>
+            <option value="3">Major Hints Taken | Couldnt Solve | Very likely to forget</option>
+        </select>
+    </div>
 
-        <button type="submit" class="btn">Add Problem</button>
-    </form>
+    <div class="form-group">
+        <label for="code">Your Code Approach:</label>
+        <textarea
+            id="code"
+            name="code"
+            rows="10"
+            required
+            placeholder="Paste your code approach here..."
+        ></textarea>
+    </div>
 
-    <script>
-        let timerInterval;
-        let seconds = 0;
-        
-        const timerDisplay = document.getElementById('timerDisplay');
-        const startBtn = document.getElementById('startTimerBtn');
-        const stopBtn = document.getElementById('stopTimerBtn');
-        const timeTakenInput = document.getElementById('time_taken');
+    <div class="submit-actions">
+        <button type="submit" name="action" value="schedule" class="btn btn-schedule">
+            Schedule Problem <span>Recommended</span>
+        </button>
 
-        function formatTime(totalSeconds) {
-            const m = Math.floor(totalSeconds / 60).toString().padStart(2, '0');
-            const s = (totalSeconds % 60).toString().padStart(2, '0');
-            return `${m}:${s}`;
+        <button type="submit" name="action" value="mastered" class="btn btn-mastered">
+           Fix Problem <span>Mastered</span>
+        </button>
+    </div>
+
+</form>
+
+<script>
+    const DRAFT_KEY = 'rewise:add-problem-draft';
+    let timerInterval = null;
+    let seconds = 0;
+    let startTime;
+    let sessionChecked = false;
+
+    const timerDisplay = document.getElementById('timerDisplay');
+    const startBtn = document.getElementById('startTimerBtn');
+    const stopBtn = document.getElementById('stopTimerBtn');
+    const resetBtn = document.getElementById('resetTimerBtn');
+    const timeTakenInput = document.getElementById('time');
+    const form = document.querySelector('.add-problem-form');
+    const urlInput = document.getElementById('url');
+    const ratingInput = document.getElementById('rating');
+    const codeInput = document.getElementById('code');
+    const ignoreTimeInput = document.getElementById('ignoreTime');
+    const adjustButtons = document.querySelectorAll('[data-adjust]');
+
+    function formatTime(totalSeconds) {
+        const minutes = String(
+            Math.floor(totalSeconds / 60)
+        ).padStart(2, '0');
+
+        const secs = String(
+            totalSeconds % 60
+        ).padStart(2, '0');
+
+        return `${minutes}:${secs}`;
+    }
+
+    function updateTimer() {
+        timerDisplay.textContent = formatTime(seconds);
+
+        // Store raw seconds in hidden input
+        timeTakenInput.value = seconds;
+        saveDraft();
+    }
+
+    function saveDraft() {
+        const draft = {
+            url: urlInput.value,
+            rating: ratingInput.value,
+            code: codeInput.value,
+            seconds,
+            ignoreTime: ignoreTimeInput.checked,
+            savedAt: Date.now()
+        };
+
+        localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+    }
+
+    function restoreDraft() {
+        const rawDraft = localStorage.getItem(DRAFT_KEY);
+        if (!rawDraft) return;
+
+        try {
+            const draft = JSON.parse(rawDraft);
+
+            urlInput.value = draft.url || '';
+            ratingInput.value = draft.rating || '';
+            codeInput.value = draft.code || '';
+            ignoreTimeInput.checked = Boolean(draft.ignoreTime);
+            seconds = parseInt(draft.seconds, 10) || 0;
+            updateTimer();
+        } catch {
+            localStorage.removeItem(DRAFT_KEY);
+        }
+    }
+
+    startBtn.addEventListener('click', () => {
+
+        if (timerInterval) return;
+
+        startBtn.disabled = true;
+        stopBtn.disabled = false;
+
+        startTime = Date.now() - seconds * 1000;
+
+        timerInterval = setInterval(() => {
+
+            seconds = Math.floor(
+                (Date.now() - startTime) / 1000
+            );
+
+            if (seconds > 3599) {
+                seconds = 3599;
+            }
+
+            updateTimer();
+
+            if (seconds >= 3599) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+                startBtn.disabled = true;
+                stopBtn.disabled = true;
+            }
+
+        }, 250);
+    });
+
+    stopBtn.addEventListener('click', () => {
+
+        clearInterval(timerInterval);
+        timerInterval = null;
+
+        startBtn.disabled = false;
+        stopBtn.disabled = true;
+    });
+
+    resetBtn.addEventListener('click', () => {
+
+        clearInterval(timerInterval);
+        timerInterval = null;
+
+        seconds = 0;
+
+        startBtn.disabled = false;
+        stopBtn.disabled = true;
+
+        updateTimer();
+    });
+
+    adjustButtons.forEach((button) => {
+        button.addEventListener('click', () => {
+            const change = parseInt(button.dataset.adjust, 10) || 0;
+            seconds = Math.min(Math.max(seconds + change, 0), 3599);
+
+            if (timerInterval) {
+                startTime = Date.now() - seconds * 1000;
+            }
+
+            updateTimer();
+        });
+    });
+
+    [urlInput, ratingInput, codeInput, ignoreTimeInput].forEach((input) => {
+        input.addEventListener('input', saveDraft);
+        input.addEventListener('change', saveDraft);
+    });
+
+    restoreDraft();
+    updateTimer();
+
+    form.addEventListener('submit', async (event) => {
+        if (sessionChecked) {
+            localStorage.removeItem(DRAFT_KEY);
+            return;
         }
 
-        startBtn.addEventListener('click', () => {
-            startBtn.disabled = true;
-            stopBtn.disabled = false;
-            timerInterval = setInterval(() => {
-                seconds++;
-                const formattedTime = formatTime(seconds);
-                timerDisplay.innerText = formattedTime;
-                timeTakenInput.value = formattedTime;
-            }, 1000);
-        });
+        event.preventDefault();
 
-        stopBtn.addEventListener('click', () => {
-            clearInterval(timerInterval);
-            startBtn.disabled = false;
-            stopBtn.disabled = true;
-        });
-    </script>
+        if (!ignoreTimeInput.checked && parseInt(timeTakenInput.value, 10) <= 0) {
+            alert('Please start the timer and record time before adding the problem.');
+            saveDraft();
+            return;
+        }
 
-    <%- include('partials/footer') %>
+        saveDraft();
+
+        try {
+            const response = await fetch('/api/session');
+            const data = await response.json();
+
+            if (!data.authenticated) {
+                alert('Your login expired. I saved this problem draft. Login once and you will come back here.');
+                window.location.href = '/login?returnTo=/new';
+                return;
+            }
+
+            sessionChecked = true;
+            form.requestSubmit(event.submitter);
+        } catch {
+            alert('Could not verify your login. Your draft is saved, please try again.');
+        }
+    });
+</script>
+
+<%- include('partials/footer') %>

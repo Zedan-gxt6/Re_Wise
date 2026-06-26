@@ -1,0 +1,54 @@
+<%- include('partials/header') %>
+
+<div class="wide-editor-page">
+<h1 class="txt-center">Add New Concept</h1>
+
+<form action="/add_concept" method="POST" class="form-group">
+  <div class="form-group">
+    <label for="title">Title</label>
+    <input type="text" id="title" name="title" required>
+  </div>
+
+  <div class="form-group">
+    <label for="book_id">Add to Existing Book</label>
+    <select id="book_id" name="book_id">
+      <option value="">No book / choose new book below</option>
+      <% books.forEach(book => { %>
+        <option value="<%= book.id %>"><%= book.name %></option>
+      <% }) %>
+    </select>
+  </div>
+
+  <div class="form-group">
+    <label for="new_book_name">Or Create New Book</label>
+    <input type="text" id="new_book_name" name="new_book_name" placeholder="Example: Binary Search Notes">
+  </div>
+
+  <div class="form-group">
+    <label for="priority">Importance</label>
+    <select id="priority" name="priority" required>
+      <option value="1">1 - Low</option>
+      <option value="2">2 - Slightly Important</option>
+      <option value="3" selected>3 - Normal</option>
+      <option value="4">4 - Important</option>
+      <option value="5">5 - Extremely Important</option>
+    </select>
+  </div>
+
+  <div class="form-group">
+    <label for="concept">Concept</label>
+    <textarea id="concept" name="concept" rows="15" class="large-code-textarea" required></textarea>
+  </div>
+
+  <div class="form-group">
+    <label for="review_days">Review Days</label>
+    <input type="number" id="review_days" name="review_days" min="1" value="1" required>
+  </div>
+
+  <button type="submit" class="btn btn-primary">Add Concept</button>
+</form>
+
+<a href="/dashboard" class="btn btn-secondary">Back to Dashboard</a>
+</div>
+
+<%- include('partials/footer') %>

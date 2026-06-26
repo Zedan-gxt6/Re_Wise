@@ -1,0 +1,273 @@
+id,rating,status,created_at,code,due_date,user_id,time,revisions_done,base_strenght,platform,prob_id
+6,1,MASTERED,Sun May 10 2026 20:54:01 GMT+0300 (التوقيت العربي الرسمي),"/**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     TreeNode *left;
+ *     TreeNode *right;
+ *     TreeNode() : val(0), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x, TreeNode *left, TreeNode *right) : val(x), left(left), right(right) {}
+ * };
+ */
+
+class Solution {
+public:
+    void helper(TreeNode* root,int max,int* count){
+        if(!root) return;
+        if(root->val>=max){ (*count)++; max=root->val;}
+        helper(root->right,max,count);
+        helper(root->left,max,count);
+    }
+    int goodNodes(TreeNode* root) {
+        int count=0,max=INT_MIN;
+        helper(root,max,&count);
+        return count;
+    }
+};
+",Mon May 11 2026 20:54:01 GMT+0300 (التوقيت العربي الرسمي),1,0,0,,,
+7,2,MASTERED,Mon May 11 2026 09:47:24 GMT+0300 (التوقيت العربي الرسمي),"class Solution {
+public:
+    vector<int> validBst(TreeNode* root){
+        if(!root) return {1,1001,-1001};
+
+        vector<int> l = validBst(root->left);
+        vector<int> r = validBst(root->right);
+
+        if(l[0] && r[0]){
+            if(root->val>l[2] && root->val<r[1]) return {1,l[1]==1001?root->val:l[1],r[2]==-1001?root->val:r[2]};
+            else return {0,0,0};
+        }
+        return {0,0,0};
+    }
+    bool isValidBST(TreeNode* root) {
+        vector<int> ans= validBst(root);
+        return ans[0]==1;
+    }
+};",Thu May 21 2026 09:47:24 GMT+0300 (التوقيت العربي الرسمي),1,97,0,,,
+8,1,LEARNING,Mon May 11 2026 15:43:10 GMT+0300 (التوقيت العربي الرسمي),"Code it once more
+
+Hint: Inorder of bst is inc, so dec val of k until 0 and store ans in variable and return",Mon Jun 29 2026 11:39:27 GMT+0300 (التوقيت العربي الرسمي),1,694,0,,,
+9,3,LEARNING,Tue May 12 2026 16:52:38 GMT+0300 (التوقيت العربي الرسمي),"Just Make cases
+On a node do the following
+1. Maintain a global max which tracks max from maxpathsum of left sub tree and right ST(2 cases)
+2. Pass max pathsum including curr node to upper parent node (3 cases).",Fri Jun 19 2026 12:54:38 GMT+0300 (التوقيت العربي الرسمي),1,3599,0,,,
+10,2,LEARNING,Wed May 13 2026 05:24:40 GMT+0300 (التوقيت العربي الرسمي),"This is a BST url
+However both solutions for BT and BST there
+
+Different Appproaches for BT and BST
+BST in O(logn) and BT in O(n);
+
+BT:
+class Solution {
+public:
+    TreeNode* helper(TreeNode* root,int p,int q,TreeNode** ans){ //BT approach
+        if(!root) return NULL;
+        
+        TreeNode* l=helper(root->left,p,q,ans);
+        TreeNode* r=helper(root->right,p,q,ans);
+
+        if(l && r) {(*ans)=root; return root;}
+        if(l || r){
+            if(root->val==p || root->val==q){
+                (*ans)=root;
+            }
+            return root;
+        } 
+        if(root->val==p || root->val==q){
+            return root;
+        }
+        return NULL;
+    }
+    TreeNode* lowestCommonAncestor(TreeNode* root, TreeNode* p, TreeNode* q) {
+        TreeNode* ans;
+        helper(root,p->val,q->val,&ans);
+        return ans;
+    }
+};
+
+BST:
+class Solution {
+public:
+    TreeNode* lowestCommonAncestor(TreeNode* root, TreeNode* p, TreeNode* q) { //BST
+        if(!root) return NULL;
+        // a: Root,b:Smaller one,c:Larger one
+        int a=root->val;
+        int b=p->val<q->val?p->val:q->val;
+        int c=b==p->val?q->val:p->val;
+        //Check if i am the LCA,if yes return
+        if(a>=b && a<=c) return root;
+        //Check with BST property for LCA
+        if(a<b) return lowestCommonAncestor(root->right,p,q);
+        if(a>c) return lowestCommonAncestor(root->left,p,q);
+    }
+};
+",Tue Jun 23 2026 17:32:22 GMT+0300 (التوقيت العربي الرسمي),1,1980,0,,,
+11,1,MASTERED,Thu May 14 2026 07:49:03 GMT+0300 (التوقيت العربي الرسمي),"Easy only, just code once",Mon Jun 08 2026 07:49:03 GMT+0300 (التوقيت العربي الرسمي),1,600,0,,,
+12,2,LEARNING,Fri May 15 2026 12:37:04 GMT+0300 (التوقيت العربي الرسمي),"First just store the order as a hash with key:letter and val: its priority;
+
+Then for each pair of adj words check if they follow lexicographical order;
+
+If different lenghts then if starting both equal and lenght of next word is smaller then not lexic return false.
+
+Thats it.",Mon Jun 29 2026 11:27:49 GMT+0300 (التوقيت العربي الرسمي),1,1800,0,,,
+13,1,MASTERED,Fri May 15 2026 17:31:09 GMT+0300 (التوقيت العربي الرسمي),Be careful with bounds cycle infinite loop checking code fast;,Mon May 18 2026 17:31:09 GMT+0300 (التوقيت العربي الرسمي),1,900,0,,,
+14,2,MASTERED,Sat May 16 2026 09:19:12 GMT+0300 (التوقيت العربي الرسمي),"-> Push all nodes with 0 in normal queue.
+-> Apply BFS + Edge relaxation.
+",Sun May 17 2026 09:19:12 GMT+0300 (التوقيت العربي الرسمي),1,1200,0,,,
+15,3,LEARNING,Sat May 16 2026 10:17:31 GMT+0300 (التوقيت العربي الرسمي),"Be very careful with placement of fresh variable checking and all
+make proper psudo code on paper first with text and then code dont jump directly.
+
+Second attempt learning: SOlved in 18 min
+Remebr: ALl operations on queues are O(1) so caluclte size with function no need to maintain variables.
+
+sol 2 is most optimal;",Thu Jun 18 2026 13:04:14 GMT+0300 (التوقيت العربي الرسمي),1,3000,0,,,
+16,2,MASTERED,Mon May 18 2026 09:29:27 GMT+0300 (التوقيت العربي الرسمي),"Just Apply DFS/BFS from cells which are in top row/top coloumn with pacific visited and  last row/coloumn with atlantic visited
+
+Then whcih ever cell is both visited put in ans.
+
+Also make sure to check valid points,its shouldnt be visited,height of neighbour greater or equal then only do dfs.",Sun Jun 07 2026 09:29:27 GMT+0300 (التوقيت العربي الرسمي),1,2700,0,,,
+17,3,LEARNING,Mon May 18 2026 15:28:28 GMT+0300 (التوقيت العربي الرسمي),"Very easy concept but u may tangle up in a wrong approach.
+
+First of all qn doesnt only consider group of 4 'O's as it seems it means any group of 'O's surrounded by Xs .
+
+Now simple approach is Apply dfs from border Os and mark all Os visited as 'V'.
+
+Later Change accordingly.
+
+Other approaches may fail due to some flaws like dont consider finding a path from each O a cell taking you out its possible but messy here.",Tue Jun 23 2026 12:37:32 GMT+0300 (التوقيت العربي الرسمي),1,2700,0,,,
+18,1,MASTERED,Tue May 19 2026 07:34:48 GMT+0300 (التوقيت العربي الرسمي),"Easy.
+Use adj list approach.
+Use vis array with 0,1,2 where 0: not vis yet, 1: in rec stack, 2: completed(not in rec stack).
+And check if theres a cycle.
+Very imp point, also when calling recursively in isCycle function make sure to return true if it returns true as well you always tend to miss on this.",Wed Jun 03 2026 07:34:48 GMT+0300 (التوقيت العربي الرسمي),1,900,0,,,
+19,2,MASTERED,Tue May 19 2026 09:25:56 GMT+0300 (التوقيت العربي الرسمي),"Very impostant.
+Checking Cycle in Undirected graph.
+At the same time checking whether graph is connected or not. Both these conditions important.",Fri May 29 2026 09:25:56 GMT+0300 (التوقيت العربي الرسمي),1,2160,0,,,
+20,1,MASTERED,Wed May 20 2026 12:37:09 GMT+0300 (التوقيت العربي الرسمي),"Very easy
+Use DSU, APProach: Traverse through all edges from start and then return the edge which makes cycle.
+This is beacuse we keep constructing the graph and since only one edge makes cycle we return that and since we start from start of edges array we find the edge in the end of array.",Sun Jun 07 2026 12:37:09 GMT+0300 (التوقيت العربي الرسمي),1,600,0,,,
+21,2,LEARNING,Thu May 21 2026 04:37:52 GMT+0300 (التوقيت العربي الرسمي),"Its Just BFS
+The slighly trickier part for which problem is tough is to play with strings and Construct graph.
+
+But one huge optimisation is implicit creation of graph(ASK AI if not getting) where instead of manually creating edges O(N2) total comp O(N2.L), to find neighbour you do it on spot inside BFS in O(N.L) total complexity overall.
+Hint : think replacing char by all alphas a-z.",Sat Jun 20 2026 04:37:52 GMT+0300 (التوقيت العربي الرسمي),1,3000,0,,,
+22,2,LEARNING,Tue May 26 2026 13:48:50 GMT+0300 (التوقيت العربي الرسمي),"Can be done by both DP and two pointers
+
+DP: Store dp[i][j] as true or false indicating if substr(i to j) is pal or not.
+If it is store maxi(maxindex) and maxl and then at last return s.substr(maxi,maxl).
+
+Two pointers: for each index, expand from centre, for odd palindrome do expand(i,i) and for even pal do expand(i,i+1) then store maxi and maxl atlast return just like above.
+
+Both O(n2) time, but two pointers O(1) space.",Sat Jun 27 2026 10:55:59 GMT+0300 (التوقيت العربي الرسمي),1,2700,0,,,
+23,1,MASTERED,Tue May 26 2026 13:58:39 GMT+0300 (التوقيت العربي الرسمي),"Same as Longest pal substring, here just count the true entries in dp or if doing with two pinter then count accordingly.",Mon Jun 15 2026 13:58:39 GMT+0300 (التوقيت العربي الرسمي),1,420,0,,,
+24,2,LEARNING,Wed May 27 2026 12:31:39 GMT+0300 (التوقيت العربي الرسمي),"Its just 0-1 knapsack
+Intution: Choosing two stones x and y to smash means assigning it values +x and -y.
+Now we do this repeatedly ultimatly the min stone value remaining is a expression of all stones addition with assigned signs(+ or -).
+So we partion stones into two groups positive and negative and then do positve sum-neg sum as out ans.
+So now the problem is to partition array into two grouos such that their diff is min.
+So is the implmentation accordingly.
+best fit total/2 and then calc the diffrence of both partitions and return.",Sat Jun 27 2026 21:58:12 GMT+0300 (التوقيت العربي الرسمي),1,3540,0,,,
+25,2,LEARNING,Tue Jun 02 2026 11:16:39 GMT+0300 (التوقيت العربي الرسمي),"Just BFS
+But coding is a bit tough.
+Edge case: 0000 could be a deadend.
+Make sure to use unordered_sets.",Mon Jun 22 2026 11:16:39 GMT+0300 (التوقيت العربي الرسمي),1,1800,0,,,
+26,1,MASTERED,Sun Jun 07 2026 11:26:19 GMT+0300 (التوقيت العربي الرسمي),"forall i(0 to n-1):
+   if(a[i]<min) update min
+   else update max with a[i];",Wed Jun 10 2026 11:26:19 GMT+0300 (التوقيت العربي الرسمي),1,540,0,,,
+27,2,LEARNING,Sun Jun 07 2026 15:25:48 GMT+0300 (التوقيت العربي الرسمي),"DP: On every index u can either
+(buy/skip) if !holding a stock orr
+(sell/skip) if holding a stock.
+Make a DP(n,2) nearly 1d dp sol.
+
+Also in this tabulation works from calculating from end till start as we always want dp[i+1][0/1].
+
+Also since in all iterations we only need dp[i+1], we can just keep track of two vectors curr(2) and next(2) and when calculating from back we can always do next=curr. O(1) spacee.
+
+DP: 
+class Solution {
+public:
+    int prof(vector<int>& pr,vector<vector<int>> &dp,int i,int hold){
+        if(dp[i][hold]!=-1) return dp[i][hold];
+        if(hold){
+            dp[i][hold]=max(pr[i]+prof(pr,dp,i+1,0),prof(pr,dp,i+1,1));
+        }
+        else dp[i][hold]=max(-1*pr[i]+prof(pr,dp,i+1,1),prof(pr,dp,i+1,0));
+        return dp[i][hold];
+    }
+    int maxProfit(vector<int>& pr) {
+        int n=pr.size();
+        vector<vector<int>> dp(n+1,vector<int>(2,-1));
+        dp[n][0]=0; dp[n][1]=0;
+        return prof(pr,dp,0,0);
+    }
+};
+
+Greedy: Very easy
+Visualise: Make graph keeping indices at x axis and values at y.
+Now for each positive slope add it to the profit and thats the max profit.
+its just the positive differences a[i]-a[i-1] thats it.
+visulaise with graph u made.",Tue Jul 07 2026 22:08:01 GMT+0300 (التوقيت العربي الرسمي),1,3599,0,,,
+28,3,LEARNING,Sun Jun 07 2026 16:33:11 GMT+0300 (التوقيت العربي الرسمي),"The solution has done it by the same logic as in buy and sell stock 2 tabulation with only next and curr state.
+Here we also have a (remaining days state) in this case only 0,1,2.
+We calc curr and then make next as curr and so on...
+Code is small but fully concept heavy.
+Visualise why we need a rem days staet aswell by graph.",Wed Jul 01 2026 22:13:04 GMT+0300 (التوقيت العربي الرسمي),1,3599,0,,,
+29,2,MASTERED,Sun Jun 07 2026 16:40:44 GMT+0300 (التوقيت العربي الرسمي),"Same as Buy amd sell 3 here its just k atmost transactions rest all same
+Here complexity O(n*k*2) there in atmost 2 transactions its O(n*2*3) which is linear.",Thu Jun 11 2026 16:40:44 GMT+0300 (التوقيت العربي الرسمي),1,1800,0,,,
+30,2,LEARNING,Mon Jun 08 2026 09:36:17 GMT+0300 (التوقيت العربي الرسمي),"Here we make one more state as canbuy
+So basically we have curr and next pointers and curr[i][j] means the same as chekcinh condition that is if i is 0 then im not holding a stock and if j is 1 i cant buy bcs i have sold in prev step so naturally i skip it as in code. Imagine these parameters to come from prev step..in this case the next index as we want dp[i+1] to calc dp[i].",Thu Jul 02 2026 22:27:01 GMT+0300 (التوقيت العربي الرسمي),1,600,0,,,
+31,1,MASTERED,Mon Jun 08 2026 12:47:08 GMT+0300 (التوقيت العربي الرسمي),Same as Buy and sell stock 2 but here when selling just consider transc fee to rest its very easy.,Sun Jun 14 2026 12:47:08 GMT+0300 (التوقيت العربي الرسمي),1,332,0,,,
+32,3,LEARNING,Sun Jun 14 2026 11:08:52 GMT+0300 (التوقيت العربي الرسمي),"Very Good qn.
+
+First thought: The target sum expression is just sum of all numbers with some being negative and some being positive.
+
+So divide into two groups pos and neg.
+So we need those grouos such that sum of pos-neg is tagret.
+Also pos+neg is total sum.
+So by these equations we get pos=(sum+target)/2 which should be even.
+
+Now just count the ways so that subset sum equals pos;
+
+Also 0's play a crucial role here so our dp init is just dp[0][0]=1 not all dp[i][0]=1 bcz suppose i have 2 0's so no. of ways to mae target 0 with having all these 0's is 4,(+0-0,+0+0,-0-0,-0+0).
+
+All these are good edge thinkimg cases which is handled by dp;
+",Fri Jun 19 2026 11:08:52 GMT+0300 (التوقيت العربي الرسمي),1,2819,0,,,
+33,2,MASTERED,Sun Jun 14 2026 11:17:52 GMT+0300 (التوقيت العربي الرسمي),"Init is dp[i][0]=1 for all indexes i as sum =0 having any no. of numbers theres one way to not chose naything and still the sum is 0. but in case of targ not zero but we are having numbers theres no way to chose so first row is 0 except dp[0][0].
+
+Then in inc case we inc that elemnt again so dp[i] not i-1;",Mon Jun 15 2026 11:17:52 GMT+0300 (التوقيت العربي الرسمي),1,227,0,,,
+34,2,LEARNING,Sun Jun 14 2026 12:51:24 GMT+0300 (التوقيت العربي الرسمي),Nothing much its a O(n) approach where i make a dp matrix to store the max path lenght in each cell so that i dont require to calc it agin and again and rest its a simple graphs problem.,Sun Jun 21 2026 12:51:24 GMT+0300 (التوقيت العربي الرسمي),1,1655,0,,,
+35,2,LEARNING,Sun Jun 14 2026 15:49:56 GMT+0300 (التوقيت العربي الرسمي),"Done in 2 pass(Optimal sol).
+
+First pass start from left and check curr and gt its left neighbour and if yes give more candies that left ne.
+
+Next pass do same with starting from right and checking right neighbours and if it has less candies than neighbour then give 1 candy more than the neighbour.
+
+The intution is when checking ne it should have comoleted its count and finalised so we do it this way.
+
+The brute force way takes n2 time where for each elemnt we check both its neighbours and inc candy accordingly this is one pass.
+These passes are done until the array stays the same.(use while(changed) loop).",Wed Jun 24 2026 15:49:56 GMT+0300 (التوقيت العربي الرسمي),1,485,0,,,
+36,2,LEARNING,Sun Jun 14 2026 16:22:19 GMT+0300 (التوقيت العربي الرسمي),"Use a monotonic stack.
+When you try to push a elemnt and the top is lesser than elmnt then we have found the nxt greater for top so set it and pop and repeat until top is greter or equal to elmnt.
+
+This ensures stack is mono dec upwards.
+
+Intution: suppose i have 30 28 26 27 40
+so st: 30 28 26 then 27 is nxt grt for 26 so pop so now st: 30 28 27 and now 40 is next grt for all so all updated 
+The thing is middle ones get updated with their nxt grt..
+
+O(n) approach as a elemnt is pused and popped only once.",Sat Jun 20 2026 16:22:19 GMT+0300 (التوقيت العربي الرسمي),1,443,0,,,
+37,2,MASTERED,Sun Jun 14 2026 21:28:09 GMT+0300 (التوقيت العربي الرسمي),"iterative: Take 3 pointers and just do b->next=a then a=b and b=c and repeat until b is not null thats it.
+Do on paper and visualise with example.
+
+Rec 1: Just like iterative but in rec style
+
+Rec 2: This says that the curr node im at first reverse the nodes after me then reverse me and my next part and store the newhead and return it until and and atlast return new head.",Wed Jun 17 2026 21:28:09 GMT+0300 (التوقيت العربي الرسمي),1,1364,0,,,
+38,2,LEARNING,Wed Jun 17 2026 21:53:29 GMT+0300 (التوقيت العربي الرسمي),"Compare last char of both and strings and if same then dp[i-1][j-1] else 1 + max(either replace insert or dlete char in first string) and for base case
+Take examples of empty strings and all and generate.",Sat Jun 20 2026 21:53:29 GMT+0300 (التوقيت العربي الرسمي),1,2278,0,,,
+39,3,LEARNING,Thu Jun 18 2026 13:21:41 GMT+0300 (التوقيت العربي الرسمي),"Think like your are actually playing this game
+turn varaible 0 means its my turn so i try to get all possi cases where i take piles and then i call the rest of the piles but with turn 1 indicating now im playing as second.
+And when im playing as second the opposite player tries to minimise stones you get so min(...).
+
+This DP means when turn 0 how many stones can i take starting from index x and by acquiring atmost m piles playing first.
+and when turn 1 it means the same but by playing second.",Sun Jun 21 2026 13:21:41 GMT+0300 (التوقيت العربي الرسمي),1,3599,0,,,

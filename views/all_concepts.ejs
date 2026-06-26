@@ -1,0 +1,57 @@
+<%- include('partials/header') %>
+
+<h2 class="txt-center">All Concepts</h2>
+
+<form action="/concepts/all" method="GET" class="filter-panel">
+  <div class="filter-grid">
+    <div class="form-group">
+      <label for="book">Book</label>
+      <select id="book" name="book">
+        <option value="">All books</option>
+        <% books.forEach(book => { %>
+          <option value="<%= book.id %>" <%= String(selectedBook) === String(book.id) ? 'selected' : '' %>>
+            <%= book.name %>
+          </option>
+        <% }) %>
+      </select>
+    </div>
+  </div>
+  <div class="filter-actions">
+    <button type="submit" class="btn btn-schedule">Apply</button>
+    <a href="/concepts/all" class="btn btn-secondary">Clear</a>
+  </div>
+</form>
+
+<div class="concept-list">
+  <% if (concepts.length === 0) { %>
+    <p>No concepts found.</p>
+  <% } else { %>
+    <% concepts.forEach(c => { %>
+      <div class="problem-card">
+        <h3><%= c.title %> <span class="count-badge"><%= c.id %></span></h3>
+        <p><strong>Book:</strong> <%= c.book_name || 'No book' %></p>
+        <p><strong>Importance:</strong> <%= c.priority || 3 %> / 5</p>
+        <p><strong>Created:</strong> <%= new Date(c.created_at).toLocaleDateString() %></p>
+        <p><strong>Due:</strong> <%= new Date(c.due_date).toLocaleDateString() %></p>
+        <p><strong>Status:</strong> <%= c.status %></p>
+        <details class="hint-details">
+          <summary>View Concept</summary>
+          <div class="hint-content concept-code-wrap">
+            <pre class="concept-code"><code><%= c.concept %></code></pre>
+          </div>
+        </details>
+        <div class="actions-row">
+          <a href="/concepts/<%= c.id %>/edit" class="btn btn-action-schedule btn-sm">Edit</a>
+          <form action="/concepts/<%= c.id %>/rotate" method="POST" style="display:inline;">
+            <input type="number" name="review_days" value="<%= c.review_days || 1 %>" min="1" required />
+            <button type="submit" class="btn btn-primary btn-sm">Rotate</button>
+          </form>
+        </div>
+      </div>
+    <% }) %>
+  <% } %>
+</div>
+
+<a href="/concepts" class="btn btn-secondary">Back to Due Concepts</a>
+
+<%- include('partials/footer') %>

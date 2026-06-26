@@ -1,5 +1,21 @@
 <%- include('partials/header') %>
 
+<%
+function formatTime(seconds) {
+    if (seconds === null || seconds === undefined) return 'N/A';
+    const minutes = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${minutes} min ${secs} sec`;
+}
+
+function maxRevisions(difficulty) {
+    if (difficulty === 'Easy') return 3;
+    if (difficulty === 'Medium') return 5;
+    if (difficulty === 'Hard') return 7;
+    return 5;
+}
+%>
+
 <h1><%= title %> <span class="count-badge"><%= problems.length %></span></h1>
 
 <div class="page-actions">
@@ -16,32 +32,73 @@
         <% problems.forEach(problem => { %>
             <div class="problem-card">
                 <h3><%= problem.title %> <% if (problem.status === 'MASTERED') { %> <span class="mastered-badge">Mastered 🎉</span> <% } %></h3>
-                <p><strong>URL:</strong> <a href="<%= problem.url %>" target="_blank"><%= problem.url %></a></p>
-                <p><strong>Rating:</strong> 
-                    <% if (problem.rating === 1) { %> Easy <% } %>
-                    <% if (problem.rating === 2) { %> Medium <% } %>
-                    <% if (problem.rating === 3) { %> Hard <% } %>
+                <% if (problem.url) { %>
+                    <p><strong>URL:</strong> <a href="<%= problem.url %>" target="_blank"><%= problem.url %></a></p>
+                <% } else { %>
+                    <p><strong>URL:</strong> Not mapped yet</p>
+                <% } %>
+                <% if (problem.problem_difficulty) { %>
+                    <p><strong>Difficulty:</strong> <%= problem.problem_difficulty %></p>
+                <% } %>
+                <p><strong>Independence:</strong> 
+                    <% if (problem.rating === 1) { %> Fully Independent <% } %>
+                    <% if (problem.rating === 2) { %> Minor Hints Taken <% } %>
+                    <% if (problem.rating === 3) { %> Major Hints Taken/Couldn't Solve <% } %>
                 </p>
-                <p><strong>Time Taken:</strong> <%= problem.time_taken || 'N/A' %></p>
+                <p><strong>Time Taken:</strong> <%= formatTime(problem.time) %></p>
                 <% if (problem.due_date) { %>
                     <p><strong>Due Date:</strong> <%= new Date(problem.due_date).toLocaleDateString() %></p>
                 <% } %>
+                <% if (problem.problem_difficulty) { %>
+                    <p><strong>Revisions:</strong> <%= problem.revisions_done || 0 %> / <%= maxRevisions(problem.problem_difficulty) %></p>
+                <% } %>
+                <% if (problem.topic_name) { %>
+                    <details>
+                        <summary>View Topic</summary>
+                        <div style="padding: 1rem; color: var(--accent-info); font-weight: 600;">
+                            <%= problem.topic_name %>
+                        </div>
+                    </details>
+                <% } %>
                 <% if (problem.code) { %>
                     <details>
-                        <summary>View Code</summary>
+                        <summary>View Approach</summary>
                         <pre><code><%= problem.code %></code></pre>
                     </details>
                 <% } %>
-                <div class="actions-row">
-                    <% if (problem.status !== 'MASTERED') { %>
-                        <form action="/problems/<%= difficulty %>/<%= problem.id %>/master" method="POST">
-                            <button type="submit" class="btn btn-success btn-sm">Fix (Mastered)</button>
+                <details>
+                    <summary>Edit Approach</summary>
+                    <div style="padding: 1rem;">
+                        <form action="/problems/<%= difficulty %>/<%= problem.id %>/update-approach" method="POST" style="display: flex; flex-direction: column; gap: 0.8rem;">
+                            <textarea name="code" rows="8" placeholder="Paste or type your updated approach/code..."><%= problem.code || '' %></textarea>
+                            <button type="submit" class="btn btn-primary btn-sm" style="align-self: flex-end;">Save Changes</button>
                         </form>
+                    </div>
+                </details>
+                <div class="actions-row">
+                    <% if (difficulty === 'due') { %>
+                        <form action="/problems/<%= difficulty %>/<%= problem.id %>/master" method="POST">
+                            <button type="submit" class="btn btn-action-fix btn-sm">Fix (Mastered)</button>
+                        </form>
+                        <form action="/problems/<%= difficulty %>/<%= problem.id %>/revise" method="POST">
+                            <select name="feedback" required>
+                                <option value="remembered">Fully Remembered</option>
+                                <option value="partial">Partially Forgot</option>
+                                <option value="forgot">Couldn't Recall Approach</option>
+                            </select>
+                            <button type="submit" class="btn btn-action-revision btn-sm">Schedule Again</button>
+                        </form>
+                    <% } else { %>
+                        <% if (problem.status !== 'MASTERED') { %>
+                            <form action="/problems/<%= difficulty %>/<%= problem.id %>/master" method="POST">
+                                <button type="submit" class="btn btn-action-fix btn-sm">Fix (Mastered)</button>
+                            </form>
+                        <% } else { %>
+                            <form action="/problems/<%= difficulty %>/<%= problem.id %>/schedule" method="POST">
+                                <button type="submit" class="btn btn-action-schedule btn-sm">Schedule</button>
+                            </form>
+                        <% } %>
                     <% } %>
-                    <form action="/problems/<%= difficulty %>/<%= problem.id %>/rotate" method="POST">
-                        <input type="number" name="review_days" value="<%= problem.review_days || 1 %>" min="1" required>
-                        <button type="submit" class="btn btn-primary btn-sm">Rotate (Days)</button>
-                    </form>
                 </div>
             </div>
         <% }) %>

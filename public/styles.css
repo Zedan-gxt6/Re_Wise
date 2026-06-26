@@ -9,6 +9,8 @@
     --accent-danger: #ef4444;
     --accent-info: #0ea5e9;
     --accent-purple: #8b5cf6;
+    --accent-turq: #18e8ff;
+    --accent-pink: #f53c7d;
     --border-color: rgba(255, 255, 255, 0.1);
 }
 
@@ -135,6 +137,113 @@ h1, h2, h3 {
 .btn-secondary { background-color: rgba(255, 255, 255, 0.1); color: var(--text-main); border: 1px solid var(--border-color); }
 .btn-secondary:hover { background-color: rgba(255, 255, 255, 0.2); }
 .btn-purple { background-color: var(--accent-purple); color: white; }
+.btn-turq { background-color: var(--accent-turq); color: white; }
+.btn-pink { background-color: var(--accent-pink); color: white; }
+
+.submit-actions {
+    display: flex;
+    gap: 1rem;
+    align-items: stretch;
+    flex-wrap: wrap;
+    margin-top: 1.5rem;
+}
+
+.submit-actions .btn {
+    min-width: 220px;
+    min-height: 56px;
+    flex: 1;
+    gap: 0.45rem;
+}
+
+.submit-actions .btn span {
+    font-size: 0.78rem;
+    font-weight: 700;
+    opacity: 0.9;
+}
+
+.btn-schedule {
+    color: white;
+    background:
+        linear-gradient(135deg, #00d4ff 0%, #3b82f6 45%, #8b5cf6 100%);
+    box-shadow: 0 0 22px rgba(59, 130, 246, 0.25);
+}
+
+.btn-mastered {
+    color: #052e1b;
+    background:
+        linear-gradient(135deg, #bef264 0%, #34d399 50%, #10b981 100%);
+    box-shadow: 0 0 22px rgba(16, 185, 129, 0.25);
+}
+
+.btn-action-fix {
+    color: #052e1b;
+    background: linear-gradient(135deg, #bef264 0%, #22c55e 48%, #14b8a6 100%);
+    box-shadow: 0 0 18px rgba(34, 197, 94, 0.35);
+}
+
+.btn-action-schedule {
+    color: white;
+    background: linear-gradient(135deg, #06b6d4 0%, #2563eb 48%, #7c3aed 100%);
+    box-shadow: 0 0 18px rgba(37, 99, 235, 0.35);
+}
+
+.btn-action-revision {
+    color: #241001;
+    background: linear-gradient(135deg, #fde047 0%, #f97316 55%, #fb7185 100%);
+    box-shadow: 0 0 18px rgba(249, 115, 22, 0.35);
+}
+
+.metadata-form {
+    margin-top: 1.5rem;
+}
+
+.metadata-note {
+    color: #fde68a;
+    background: rgba(245, 158, 11, 0.12);
+    border: 1px solid rgba(245, 158, 11, 0.35);
+    border-radius: 8px;
+    padding: 1rem;
+}
+
+.metadata-url-box {
+    display: grid;
+    gap: 0.35rem;
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    border-radius: 8px;
+    border: 1px solid rgba(24, 232, 255, 0.25);
+    background: rgba(14, 165, 233, 0.1);
+}
+
+.metadata-url-box span {
+    color: #67e8f9;
+    overflow-wrap: anywhere;
+}
+
+.filter-panel {
+    margin: 1.5rem 0 2rem;
+    padding: 1.25rem;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background: rgba(15, 23, 42, 0.55);
+}
+
+.filter-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1rem;
+}
+
+.filter-panel .form-group {
+    margin-bottom: 0;
+}
+
+.filter-actions {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-top: 1.25rem;
+}
 
 /* Dashboard Buttons */
 .dashboard-buttons {
@@ -192,6 +301,23 @@ textarea {
     font-family: 'Fira Code', Consolas, Monaco, monospace;
 }
 
+.large-code-textarea {
+    min-height: 360px;
+    line-height: 1.55;
+    background:
+        linear-gradient(180deg, rgba(2, 6, 23, 0.98), rgba(15, 23, 42, 0.98));
+    color: #a7f3d0;
+    border: 1px solid rgba(24, 232, 255, 0.28);
+    box-shadow: inset 0 0 24px rgba(14, 165, 233, 0.1);
+    tab-size: 4;
+}
+
+.wide-editor-page {
+    width: min(1200px, calc(100vw - 2rem));
+    margin-left: 50%;
+    transform: translateX(-50%);
+}
+
 /* Cards */
 .problem-card {
     background-color: var(--card-bg);
@@ -207,6 +333,20 @@ textarea {
 .problem-card:hover {
     transform: translateY(-4px);
     border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Centered card layout for concept pages */
+.concept-list {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+/* Wider cards within the concept list */
+.concept-list .problem-card {
+    width: 100%;
+    max-width: 1000px;
 }
 
 .problem-card h3 {
@@ -283,6 +423,48 @@ pre {
     gap: 1rem;
 }
 
+.timer-actions,
+.timer-adjust-row {
+    display: flex;
+    gap: 0.65rem;
+    flex-wrap: wrap;
+    margin-top: 0.75rem;
+}
+
+.btn-time-adjust {
+    color: #ecfeff;
+    background: linear-gradient(135deg, rgba(14, 165, 233, 0.85), rgba(139, 92, 246, 0.85));
+    border: 1px solid rgba(24, 232, 255, 0.25);
+}
+
+.time-toggle-card {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    margin-top: 1rem;
+    padding: 0.9rem 1rem;
+    border-radius: 8px;
+    border: 1px solid rgba(24, 232, 255, 0.22);
+    background: rgba(14, 165, 233, 0.08);
+    color: var(--text-main);
+    cursor: pointer;
+}
+
+.time-toggle-card input {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--accent-turq);
+}
+
+.time-toggle-card span {
+    display: grid;
+    gap: 0.15rem;
+}
+
+.time-toggle-card small {
+    color: var(--text-muted);
+}
+
 /* Actions Row */
 .actions-row {
     display: flex;
@@ -337,6 +519,22 @@ pre {
 }
 
 /* Footer */
+.txt-center {
+    text-align: center;
+}
+
+/*
+  Button color scheme is driven by CSS variables defined in :root.
+  To change a button’s colour, modify the corresponding variable:
+    --accent-primary   → .btn-primary
+    --accent-success   → .btn-success
+    --accent-warning   → .btn-warning
+    --accent-danger    → .btn-danger
+    --accent-info      → .btn-info
+    --accent-purple    → .btn-purple
+    --accent-pink      → .btn-pink
+  Example: change --accent-primary to #ff6600 for an orange primary button.
+*/
 footer {
     text-align: center;
     padding: 2rem;
@@ -430,6 +628,28 @@ footer {
     border-top: 1px solid var(--border-color);
     line-height: 1.6;
     color: var(--text-muted);
+}
+
+.concept-code-wrap {
+    padding: 0;
+    background: linear-gradient(135deg, rgba(14, 165, 233, 0.18), rgba(245, 60, 125, 0.14));
+}
+
+.concept-code {
+    margin: 0;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    background:
+        linear-gradient(180deg, rgba(2, 6, 23, 0.98), rgba(15, 23, 42, 0.98)) !important;
+    color: #67e8f9;
+    border: 1px solid rgba(24, 232, 255, 0.35);
+    border-radius: 0 0 8px 8px !important;
+    box-shadow: inset 0 0 24px rgba(14, 165, 233, 0.14);
+}
+
+.concept-code code {
+    color: #a7f3d0;
+    text-shadow: 0 0 10px rgba(103, 232, 249, 0.15);
 }
 
 .hint-content pre {

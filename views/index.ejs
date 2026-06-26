@@ -1,6 +1,17 @@
 <%- include('partials/header') %>
 
-<h1 style="text-align: center; margin-bottom: 2rem;">Welcome to Your DSA Planner Dashboard</h1>
+<h1 style="text-align: center; margin-bottom: 1.5rem;">Welcome to Your Re_Wise Dashboard</h1>
+
+<div class="stats-container" style="display: flex; gap: 1.5rem; justify-content: center; margin-bottom: 2rem; flex-wrap: wrap;">
+    <div class="stat-card" style="background: var(--card-bg); border: 1px solid var(--border-color); padding: 1.25rem 2rem; border-radius: 12px; text-align: center; min-width: 160px; backdrop-filter: blur(10px); box-shadow: 0 4px 6px rgba(0,0,0,0.15);">
+        <h3 style="font-size: 2.2rem; color: var(--accent-success); margin-bottom: 0.25rem; font-family: 'Fira Code', monospace;"><%= todaySolved %></h3>
+        <p style="color: var(--text-muted); font-size: 0.9rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px;">Solved Today</p>
+    </div>
+    <div class="stat-card" style="background: var(--card-bg); border: 1px solid var(--border-color); padding: 1.25rem 2rem; border-radius: 12px; text-align: center; min-width: 160px; backdrop-filter: blur(10px); box-shadow: 0 4px 6px rgba(0,0,0,0.15);">
+        <h3 style="font-size: 2.2rem; color: var(--accent-primary); margin-bottom: 0.25rem; font-family: 'Fira Code', monospace;"><%= totalSolved %></h3>
+        <p style="color: var(--text-muted); font-size: 0.9rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px;">Total Solved</p>
+    </div>
+</div>
 
 <div class="dashboard-buttons">
     <a href="/new" class="btn btn-primary">+ Add New Problem</a>
@@ -8,36 +19,11 @@
     <a href="/problems/medium" class="btn btn-warning">Medium Problems</a>
     <a href="/problems/hard" class="btn btn-danger">Hard Problems</a>
     <a href="/problems/due" class="btn btn-purple">All Due Problems</a>
-    <button id="getHintsBtn" class="btn btn-info">Get Hints (AI)</button>
-</div>
-
-<!-- Hints Modal -->
-<div id="hintsModal" class="modal">
-    <div class="modal-content">
-        <span class="close-modal">&times;</span>
-        <h2 style="margin-bottom: 1rem;">AI Problem Hints</h2>
-        <div class="form-group">
-            <label for="problemDescription">Problem Description (e.g., Rotting Oranges, Leetcode)</label>
-            <input type="text" id="problemDescription" placeholder="Enter problem name/description..." style="margin-bottom: 1rem;" />
-        </div>
-        <button id="generateHintsBtn" class="btn btn-primary" style="width: 100%; margin-bottom: 1rem;">Generate Hints</button>
-        
-        <div id="loadingHints" style="display: none; text-align: center; margin: 1.5rem 0;">
-            <div class="spinner"></div>
-            <p>Analyzing problem and generating progressive hints...</p>
-        </div>
-
-        <div id="hintsContainer" class="hints-container">
-            <!-- Hints will be populated here -->
-        </div>
-    </div>
+    <a href="/concepts/new" class="btn btn-turq">Add Concept</a> 
+    <a href="/concepts" class="btn btn-pink">Due Concepts</a>
 </div>
 
 <script>
-    const modal = document.getElementById("hintsModal");
-    const getHintsBtn = document.getElementById("getHintsBtn");
-    const closeBtn = document.querySelector(".close-modal");
-    const generateBtn = document.getElementById("generateHintsBtn");
     const problemInput = document.getElementById("problemDescription");
     const hintsContainer = document.getElementById("hintsContainer");
     const loadingHints = document.getElementById("loadingHints");

@@ -1,0 +1,39 @@
+<%- include('partials/header') %>
+
+<h2 class="txt-center">Due Concepts</h2>
+
+<div class="concept-list">
+  <% if (concepts.length === 0) { %>
+    <p>No due concepts.</p>
+  <% } else { %>
+    <% concepts.forEach(c => { %>
+      <div class="problem-card">
+        <h3><%= c.title %> <span class="count-badge"><%= c.id %></span></h3>
+        <p><strong>Book:</strong> <%= c.book_name || 'No book' %></p>
+        <p><strong>Importance:</strong> <%= c.priority || 3 %> / 5</p>
+        <p><strong>Due:</strong> <%= new Date(c.due_date).toLocaleDateString() %></p>
+        <p><strong>Status:</strong> <%= c.status %></p>
+        <details class="hint-details">
+          <summary>View Concept</summary>
+          <div class="hint-content concept-code-wrap">
+            <pre class="concept-code"><code><%= c.concept %></code></pre>
+          </div>
+        </details>
+        <div class="actions-row">
+          <a href="/concepts/<%= c.id %>/edit" class="btn btn-action-schedule btn-sm">Edit</a>
+          <form action="/concepts/<%= c.id %>/master" method="POST" style="display:inline;">
+            <button type="submit" class="btn btn-success btn-sm">Master</button>
+          </form>
+          <form action="/concepts/<%= c.id %>/rotate" method="POST" style="display:inline;">
+            <input type="number" name="review_days" value="<%= c.review_days || 1 %>" min="1" required />
+            <button type="submit" class="btn btn-primary btn-sm">Rotate</button>
+          </form>
+        </div>
+      </div>
+    <% }) %>
+  <% } %>
+</div>
+
+<a href="/concepts/all" class="btn btn-secondary">See All Concepts</a>
+
+<%- include('partials/footer') %>

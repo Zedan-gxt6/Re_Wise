@@ -1,0 +1,123 @@
+<%- include('partials/header') %>
+
+<%
+function formatTime(seconds) {
+    if (seconds === null || seconds === undefined) return 'N/A';
+    const minutes = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${minutes} min ${secs} sec`;
+}
+
+function independenceLabel(rating) {
+    if (rating === 1) return 'Fully Independent';
+    if (rating === 2) return 'Struggled / Minor Hints';
+    if (rating === 3) return "Major Hints / Couldn't Solve";
+    return 'N/A';
+}
+%>
+
+<h1>Filter Solved Problems <span class="count-badge"><%= problems.length %></span></h1>
+
+<form action="/problems/filter" method="GET" class="filter-panel">
+    <div class="filter-grid">
+        <div class="form-group">
+            <label for="topic">Topic</label>
+            <select id="topic" name="topic">
+                <option value="">All topics</option>
+                <% topics.forEach(topic => { %>
+                    <option value="<%= topic.id %>" <%= String(filters.topic) === String(topic.id) ? 'selected' : '' %>>
+                        <%= topic.name %>
+                    </option>
+                <% }) %>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="time_range">Time Taken</label>
+            <select id="time_range" name="time_range">
+                <option value="">Any time</option>
+                <option value="below_15" <%= filters.time_range === 'below_15' ? 'selected' : '' %>>Below 15 min</option>
+                <option value="15_30" <%= filters.time_range === '15_30' ? 'selected' : '' %>>15 to 30 min</option>
+                <option value="above_30" <%= filters.time_range === 'above_30' ? 'selected' : '' %>>Above 30 min</option>
+                <option value="above_45" <%= filters.time_range === 'above_45' ? 'selected' : '' %>>Above 45 min</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="independence">Independence</label>
+            <select id="independence" name="independence">
+                <option value="">Any level</option>
+                <option value="1" <%= filters.independence === '1' ? 'selected' : '' %>>Fully Independent</option>
+                <option value="2" <%= filters.independence === '2' ? 'selected' : '' %>>Struggled / Minor Hints</option>
+                <option value="3" <%= filters.independence === '3' ? 'selected' : '' %>>Major Hints / Couldn't Solve</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="difficulty">Difficulty</label>
+            <select id="difficulty" name="difficulty">
+                <option value="">Any difficulty</option>
+                <option value="Easy" <%= filters.difficulty === 'Easy' ? 'selected' : '' %>>Easy</option>
+                <option value="Medium" <%= filters.difficulty === 'Medium' ? 'selected' : '' %>>Medium</option>
+                <option value="Hard" <%= filters.difficulty === 'Hard' ? 'selected' : '' %>>Hard</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="status">Status</label>
+            <select id="status" name="status">
+                <option value="">Any status</option>
+                <option value="LEARNING" <%= filters.status === 'LEARNING' ? 'selected' : '' %>>Learning</option>
+                <option value="MASTERED" <%= filters.status === 'MASTERED' ? 'selected' : '' %>>Mastered</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="platform">Platform</label>
+            <select id="platform" name="platform">
+                <option value="">Any platform</option>
+                <option value="neetcode250" <%= filters.platform === 'neetcode250' ? 'selected' : '' %>>NeetCode 250</option>
+                <option value="leetcode" <%= filters.platform === 'leetcode' ? 'selected' : '' %>>LeetCode</option>
+                <option value="gfg" <%= filters.platform === 'gfg' ? 'selected' : '' %>>GFG</option>
+                <option value="other" <%= filters.platform === 'other' ? 'selected' : '' %>>Other</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="filter-actions">
+        <button type="submit" class="btn btn-schedule">Apply Filters</button>
+        <a href="/problems/filter" class="btn btn-secondary">Clear</a>
+        <a href="/" class="btn btn-secondary">Back to Dashboard</a>
+    </div>
+</form>
+
+<% if (problems.length === 0) { %>
+    <p>No solved problems match these filters.</p>
+<% } else { %>
+    <div class="problem-list">
+        <% problems.forEach(problem => { %>
+            <div class="problem-card">
+                <h3><%= problem.title %></h3>
+                <% if (problem.url) { %>
+                    <p><strong>URL:</strong> <a href="<%= problem.url %>" target="_blank"><%= problem.url %></a></p>
+                <% } %>
+                <p><strong>Difficulty:</strong> <%= problem.problem_difficulty || 'N/A' %></p>
+                <p><strong>Topic:</strong> <%= problem.topic_name || 'N/A' %></p>
+                <p><strong>Platform:</strong> <%= problem.problem_platform || problem.platform || 'N/A' %></p>
+                <p><strong>Independence:</strong> <%= independenceLabel(problem.rating) %></p>
+                <p><strong>Time Taken:</strong> <%= formatTime(problem.time) %></p>
+                <p><strong>Status:</strong> <%= problem.status || 'LEARNING' %></p>
+                <p><strong>Solved On:</strong> <%= new Date(problem.created_at).toLocaleDateString() %></p>
+
+                <% if (problem.code) { %>
+                    <details>
+                        <summary>View Approach</summary>
+                        <pre><code><%= problem.code %></code></pre>
+                    </details>
+                <% } %>
+            </div>
+        <% }) %>
+    </div>
+<% } %>
+
+<%- include('partials/footer') %>

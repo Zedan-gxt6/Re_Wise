@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Sign Up – Re_Wise</title>
+  <link rel="stylesheet" href="/styles.css">
+  <style>
+    body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      margin: 0;
+    }
+    .card {
+      background-color: var(--card-bg);
+      border: 1px solid var(--border-color);
+      padding: 2.5rem 2rem;
+      border-radius: 12px;
+      width: 100%;
+      max-width: 380px;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+    }
+    .card h2 {
+      text-align: center;
+      margin-bottom: 1.5rem;
+      background: linear-gradient(to right, #3b82f6, #8b5cf6);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      font-size: 1.80rem;
+      font-weight: 600;
+    }
+    .form-group {
+      margin-bottom: 1.25rem;
+    }
+    .form-group label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+    input[type="text"],
+    input[type="password"],
+    select {
+      width: 100%;
+      padding: 0.75rem;
+      background-color: rgba(0, 0, 0, 0.2);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      color: var(--text-main);
+      font-size: 1rem;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+      box-sizing: border-box;
+    }
+    select option {
+      background-color: #1e293b;
+      color: var(--text-main);
+    }
+    input:focus, select:focus {
+      outline: none;
+      border-color: var(--accent-primary);
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+    }
+    .card p {
+      margin-top: 1.5rem;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.95rem;
+    }
+    .card p a {
+      color: var(--accent-info);
+      text-decoration: none;
+      font-weight: 500;
+      transition: color 0.2s ease;
+    }
+    .card p a:hover {
+      color: var(--accent-primary);
+      text-decoration: underline;
+    }
+    #msg {
+      margin-top: 1rem;
+      text-align: center;
+      font-size: 0.9rem;
+      color: var(--accent-danger);
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>Re_Wise</h2>
+    <form id="signupForm">
+      <div class="form-group">
+        <label for="username">Username</label>
+        <input type="text" id="username" name="username" placeholder="Choose a username" required />
+      </div>
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" placeholder="Create a password" required />
+      </div>
+      <div class="form-group">
+        <label for="skill_level">Skill Level</label>
+        <select id="skill_level" name="skill_level" required>
+          <option value="" disabled selected>Select your level</option>
+          <option value="new">New</option>
+          <option value="intermediate">Intermediate</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="prep_duration">Prep Duration</label>
+        <select id="prep_duration" name="prep_duration" required>
+          <option value="" disabled selected>Select preparation duration</option>
+          <option value="2months">2 months</option>
+          <option value="3months">3 months</option>
+          <option value="4months">4 months</option>
+          <option value="5months">5 months</option>
+          <option value="6months">6 months</option>
+          <option value="7months">7 months</option>
+          <option value="8months">8 months</option>
+          <option value="9months">9 months</option>
+          <option value="10months">10 months</option>
+          <option value="11months">11 months</option>
+          <option value="12months">12 months</option>
+        </select>
+      </div>
+      <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 0.5rem;">Create Account</button>
+    </form>
+    <p>Already have an account? <a href="/login">Log in</a></p>
+    <div id="msg"></div>
+  </div>
+
+  <script>
+    const form = document.getElementById('signupForm');
+    const msg = document.getElementById('msg');
+    form.onsubmit = async (e) => {
+      e.preventDefault();
+      const data = new FormData(form);
+      const res = await fetch('/api/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(Object.fromEntries(data))
+      });
+      const json = await res.json();
+      if (json.message) {
+        msg.textContent = json.message;
+        window.location.href = '/dashboard';
+      } else {
+        msg.textContent = json.error || 'Signup failed';
+      }
+    };
+  </script>
+</body>
+</html>

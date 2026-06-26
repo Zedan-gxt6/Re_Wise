@@ -1,0 +1,75 @@
+<%- include('partials/header') %>
+
+<h1>Add Problem Metadata</h1>
+<p class="metadata-note"><%= reason %></p>
+
+<form action="/add/manual" method="POST" class="metadata-form">
+    <input type="hidden" name="url" value="<%= original.url %>">
+    <input type="hidden" name="rating" value="<%= original.rating %>">
+    <input type="hidden" name="time" value="<%= original.time %>">
+    <input type="hidden" name="action" value="<%= original.action %>">
+    <input type="hidden" name="slug" value="<%= metadata.slug %>">
+    <% if (original.ignore_time === 'on') { %>
+        <input type="hidden" name="ignore_time" value="on">
+    <% } %>
+    <textarea name="code" hidden><%= original.code %></textarea>
+
+    <div class="metadata-url-box">
+        <strong>Problem URL</strong>
+        <span><%= original.url %></span>
+    </div>
+
+    <div class="form-group">
+        <label for="platform">Platform</label>
+        <select id="platform" name="platform" required>
+            <option value="leetcode" <%= metadata.platform === 'leetcode' ? 'selected' : '' %>>LeetCode</option>
+            <option value="neetcode250" <%= metadata.platform === 'neetcode250' ? 'selected' : '' %>>NeetCode 250</option>
+            <option value="gfg" <%= metadata.platform === 'gfg' ? 'selected' : '' %>>GFG</option>
+            <% if (!['leetcode', 'neetcode250', 'gfg', 'other'].includes(metadata.platform)) { %>
+                <option value="<%= metadata.platform %>" selected><%= metadata.platform %></option>
+            <% } %>
+            <option value="other" <%= metadata.platform === 'other' ? 'selected' : '' %>>Other</option>
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label for="title">Exact Title on Platform</label>
+        <input
+            type="text"
+            id="title"
+            name="title"
+            value="<%= metadata.title %>"
+            placeholder="Example: Remove Element"
+            required
+        >
+    </div>
+
+    <div class="form-group">
+        <label for="difficulty">Difficulty on Platform</label>
+        <select id="difficulty" name="difficulty" required>
+            <option value="" disabled <%= !metadata.difficulty ? 'selected' : '' %>>Select difficulty</option>
+            <option value="Easy" <%= metadata.difficulty === 'Easy' ? 'selected' : '' %>>Easy</option>
+            <option value="Medium" <%= metadata.difficulty === 'Medium' ? 'selected' : '' %>>Medium</option>
+            <option value="Hard" <%= metadata.difficulty === 'Hard' ? 'selected' : '' %>>Hard</option>
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label for="topic">Topic Bucket</label>
+        <select id="topic" name="topic" required>
+            <option value="" disabled <%= !metadata.topic ? 'selected' : '' %>>Select topic</option>
+            <% topics.forEach(topic => { %>
+                <option value="<%= topic.id %>" <%= parseInt(metadata.topic, 10) === topic.id ? 'selected' : '' %>>
+                    <%= topic.name %>
+                </option>
+            <% }) %>
+        </select>
+    </div>
+
+    <div class="submit-actions">
+        <button type="submit" class="btn btn-schedule">Save Metadata & Add Problem</button>
+        <a href="/new" class="btn btn-secondary">Cancel</a>
+    </div>
+</form>
+
+<%- include('partials/footer') %>
