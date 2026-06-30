@@ -12,6 +12,11 @@
     <% if (original.ignore_time === 'on') { %>
         <input type="hidden" name="ignore_time" value="on">
     <% } %>
+    <input type="hidden" name="mistake_made" value="<%= original.mistake_made || '' %>">
+    <input type="hidden" name="hardest_part" value="<%= original.hardest_part || '' %>">
+    <input type="hidden" name="hint_1" value="<%= original.hint_1 || '' %>">
+    <input type="hidden" name="hint_2" value="<%= original.hint_2 || '' %>">
+    <input type="hidden" name="hint_3" value="<%= original.hint_3 || '' %>">
     <textarea name="code" hidden><%= original.code %></textarea>
 
     <div class="metadata-url-box">

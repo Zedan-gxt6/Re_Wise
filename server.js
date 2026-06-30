@@ -34,6 +34,38 @@ const LEETCODE_TOPIC_MAP = {
   trie: 13,
 };
 
+const LEETCODE_TOPIC_PRIORITY = [
+  "dynamic-programming",
+  "monotonic-stack",
+  "stack",
+  "heap",
+  "priority-queue",
+  "graph",
+  "union-find",
+  "topological-sort",
+  "shortest-path",
+  "depth-first-search",
+  "breadth-first-search",
+  "tree",
+  "binary-tree",
+  "binary-search-tree",
+  "trie",
+  "backtracking",
+  "recursion",
+  "binary-search",
+  "sliding-window",
+  "two-pointers",
+  "greedy",
+  "interval",
+  "bit-manipulation",
+  "math",
+  "geometry",
+  "sorting",
+  "hash-table",
+  "array",
+  "string",
+];
+
 const app = express();
 const port = 3000;
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "YOUR_GEMINI_API_KEY");
@@ -394,10 +426,15 @@ async function resolveConceptBook(userId, existingBookId, newBookName) {
 }
 
 function mapLeetcodeTopic(topicTags = []) {
-  for (const tag of topicTags) {
-    const topicId = LEETCODE_TOPIC_MAP[tag.slug];
+  const tagSlugs = new Set(topicTags.map(tag => tag.slug));
+
+  for (const slug of LEETCODE_TOPIC_PRIORITY) {
+    if (!tagSlugs.has(slug)) continue;
+
+    const topicId = LEETCODE_TOPIC_MAP[slug];
     if (topicId) return topicId;
   }
+
   return null;
 }
 
@@ -452,6 +489,11 @@ async function renderManualProblemMetadata(req, res, reason, metadata = {}) {
       code: req.body.code || "",
       action: req.body.action || "",
       ignore_time: req.body.ignore_time || "",
+      mistake_made: req.body.mistake_made || "",
+      hardest_part: req.body.hardest_part || "",
+      hint_1: req.body.hint_1 || "",
+      hint_2: req.body.hint_2 || "",
+      hint_3: req.body.hint_3 || "",
     },
     metadata: {
       platform: metadata.platform || extracted?.platform || "other",
@@ -471,13 +513,12 @@ function validateProblemSolveInput(req, res, next) {
   if (ignore_time !== "on" && (!Number.isInteger(parsedTime) || parsedTime <= 0)) {
     return res.status(400).send("Please record the time taken before adding the problem");
   }
-  if (!code || code.trim().length === 0) return res.status(400).send("Please add your code approach");
   if (!["schedule", "mastered"].includes(action)) return res.status(400).send("Please choose whether to schedule or fix the problem");
   next();
 }
 
 async function saveSolvedProblem(req, problemLookup) {
-  const { rating, time, code, action, ignore_time } = req.body;
+  const { rating, time, code, action, ignore_time, mistake_made, hardest_part, hint_1, hint_2, hint_3 } = req.body;
   const problem = problemLookup.problem;
   const status = action === "mastered" ? "MASTERED" : "LEARNING";
   const parsedTime = getTimeForScoring(problem, time, ignore_time);
@@ -488,10 +529,19 @@ async function saveSolvedProblem(req, problemLookup) {
 
   await db.query(
     `INSERT INTO problems_solved
-       (prob_id, rating, time, code, base_strength, current_threshold, last_rev_date, due_date, status, user_id, platform)
+       (prob_id, rating, time, code, mistake_made, hardest_part, hint_1, hint_2, hint_3,
+        base_strength, current_threshold, last_rev_date, due_date, status, user_id, platform)
      VALUES
-       ($1, $2, $3, $4, $5, $6, NOW(), NOW() + INTERVAL '1 day' * ($7::INTEGER), $8, $9, $10)`,
-    [problem.id, rating, parsedTime, code.trim(), baseStrength, currentThreshold, reviewDays, status, req.session.userId, problemLookup.platform]
+       ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW(), NOW() + INTERVAL '1 day' * ($12::INTEGER), $13, $14, $15)`,
+    [
+      problem.id, rating, parsedTime, code?.trim() || null,
+      mistake_made?.trim() || null,
+      hardest_part?.trim() || null,
+      hint_1?.trim() || null,
+      hint_2?.trim() || null,
+      hint_3?.trim() || null,
+      baseStrength, currentThreshold, reviewDays, status, req.session.userId, problemLookup.platform
+    ]
   );
 }
 
@@ -700,7 +750,6 @@ app.post("/add/manual", requireAuth, async (req, res) => {
   if (ignore_time !== "on" && (!Number.isInteger(parsedTime) || parsedTime <= 0)) {
     return renderManualProblemMetadata(req, res, "Please record the time taken before adding the problem.", req.body);
   }
-  if (!code?.trim()) return renderManualProblemMetadata(req, res, "Please add your code approach.", req.body);
   if (!["schedule", "mastered"].includes(action)) return renderManualProblemMetadata(req, res, "Please choose whether to schedule or fix the problem.", req.body);
 
   try {
@@ -763,6 +812,70 @@ app.get("/problems/:difficulty", requireAuth, async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).send("Error fetching problems");
+  }
+});
+
+app.get("/problems/:difficulty/:id/edit", requireAuth, async (req, res) => {
+  try {
+    const result = await db.query(
+      `SELECT ps.*,
+              COALESCE(ap.title, 'Unmapped Problem') AS title,
+              CASE WHEN ap.platform = 'neetcode250'
+                THEN 'https://neetcode.io/problems/' || TRIM(TRAILING '/' FROM ap.url)
+                ELSE ap.url
+              END AS url,
+              ap.difficulty AS problem_difficulty,
+              t.name AS topic_name
+       FROM problems_solved ps
+       LEFT JOIN all_problems ap ON ps.platform = ap.platform AND ps.prob_id = ap.id
+       LEFT JOIN topics t ON ap.topic = t.id
+       WHERE ps.id = $1 AND ps.user_id = $2`,
+      [req.params.id, req.session.userId]
+    );
+
+    if (result.rows.length === 0) return res.status(404).send("Problem not found");
+
+    res.render("edit_problem.ejs", {
+      problem: result.rows[0],
+      difficulty: req.params.difficulty,
+    });
+  } catch (err) {
+    console.error("Edit problem form error:", err);
+    res.status(500).send("Error loading problem editor");
+  }
+});
+
+app.post("/problems/:difficulty/:id/update-info", requireAuth, async (req, res) => {
+  const { code, mistake_made, hardest_part, hint_1, hint_2, hint_3 } = req.body;
+
+  try {
+    const result = await db.query(
+      `UPDATE problems_solved
+       SET code = $1,
+           mistake_made = $2,
+           hardest_part = $3,
+           hint_1 = $4,
+           hint_2 = $5,
+           hint_3 = $6
+       WHERE id = $7 AND user_id = $8`,
+      [
+        code?.trim() || null,
+        mistake_made?.trim() || null,
+        hardest_part?.trim() || null,
+        hint_1?.trim() || null,
+        hint_2?.trim() || null,
+        hint_3?.trim() || null,
+        req.params.id,
+        req.session.userId
+      ]
+    );
+
+    if (result.rowCount === 0) return res.status(404).send("Problem not found");
+
+    res.redirect(`/problems/${req.params.difficulty}`);
+  } catch (err) {
+    console.error("Update problem info error:", err);
+    res.status(500).send("Error updating problem info");
   }
 });
 

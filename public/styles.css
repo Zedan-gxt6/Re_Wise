@@ -220,6 +220,35 @@ h1, h2, h3 {
     overflow-wrap: anywhere;
 }
 
+.optional-problem-details {
+    margin-top: 1.25rem;
+    overflow: hidden;
+}
+
+.optional-notes-grid {
+    display: grid;
+    gap: 1rem;
+    padding: 1rem;
+}
+
+.optional-hints {
+    margin-top: 0;
+}
+
+.optional-hints-body,
+.note-block {
+    padding: 1rem;
+}
+
+.note-block {
+    color: var(--text-main);
+    background: rgba(14, 165, 233, 0.07);
+}
+
+.note-block p + p {
+    margin-top: 0.7rem;
+}
+
 .filter-panel {
     margin: 1.5rem 0 2rem;
     padding: 1.25rem;

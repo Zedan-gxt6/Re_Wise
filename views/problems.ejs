@@ -66,16 +66,31 @@ function maxRevisions(difficulty) {
                         <pre><code><%= problem.code %></code></pre>
                     </details>
                 <% } %>
-                <details>
-                    <summary>Edit Approach</summary>
-                    <div style="padding: 1rem;">
-                        <form action="/problems/<%= difficulty %>/<%= problem.id %>/update-approach" method="POST" style="display: flex; flex-direction: column; gap: 0.8rem;">
-                            <textarea name="code" rows="8" placeholder="Paste or type your updated approach/code..."><%= problem.code || '' %></textarea>
-                            <button type="submit" class="btn btn-primary btn-sm" style="align-self: flex-end;">Save Changes</button>
-                        </form>
-                    </div>
-                </details>
+                <% if (problem.mistake_made || problem.hardest_part) { %>
+                    <details>
+                        <summary>Review Notes</summary>
+                        <div class="note-block">
+                            <% if (problem.mistake_made) { %>
+                                <p><strong>Mistake made:</strong> <%= problem.mistake_made %></p>
+                            <% } %>
+                            <% if (problem.hardest_part) { %>
+                                <p><strong>Hardest part:</strong> <%= problem.hardest_part %></p>
+                            <% } %>
+                        </div>
+                    </details>
+                <% } %>
+                <% if (problem.hint_1 || problem.hint_2 || problem.hint_3) { %>
+                    <details>
+                        <summary>Hints</summary>
+                        <div class="note-block">
+                            <% if (problem.hint_1) { %><p><strong>Hint 1:</strong> <%= problem.hint_1 %></p><% } %>
+                            <% if (problem.hint_2) { %><p><strong>Hint 2:</strong> <%= problem.hint_2 %></p><% } %>
+                            <% if (problem.hint_3) { %><p><strong>Hint 3:</strong> <%= problem.hint_3 %></p><% } %>
+                        </div>
+                    </details>
+                <% } %>
                 <div class="actions-row">
+                    <a href="/problems/<%= difficulty %>/<%= problem.id %>/edit" class="btn btn-action-schedule btn-sm">Edit Info</a>
                     <% if (difficulty === 'due') { %>
                         <form action="/problems/<%= difficulty %>/<%= problem.id %>/master" method="POST">
                             <button type="submit" class="btn btn-action-fix btn-sm">Fix (Mastered)</button>

@@ -1,0 +1,72 @@
+<%- include('partials/header') %>
+
+<div class="wide-editor-page">
+<h1>Edit Problem Info</h1>
+
+<div class="metadata-url-box">
+    <strong><%= problem.title %></strong>
+    <% if (problem.url) { %>
+        <span><a href="<%= problem.url %>" target="_blank"><%= problem.url %></a></span>
+    <% } %>
+    <span><%= problem.problem_difficulty || 'N/A' %> · <%= problem.topic_name || 'No topic' %></span>
+</div>
+
+<form action="/problems/<%= difficulty %>/<%= problem.id %>/update-info" method="POST">
+    <details class="optional-problem-details" open>
+        <summary>Optional problem notes</summary>
+        <div class="optional-notes-grid">
+            <div class="form-group">
+                <label for="code">Problem approach/insights</label>
+                <textarea id="code" name="code" rows="12" class="large-code-textarea"><%= problem.code || '' %></textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="mistake_made">Mistake made</label>
+                <input
+                    type="text"
+                    id="mistake_made"
+                    name="mistake_made"
+                    value="<%= problem.mistake_made || '' %>"
+                    placeholder="Example: used set instead of map"
+                >
+            </div>
+
+            <div class="form-group">
+                <label for="hardest_part">Hardest part</label>
+                <input
+                    type="text"
+                    id="hardest_part"
+                    name="hardest_part"
+                    value="<%= problem.hardest_part || '' %>"
+                    placeholder="Example: realizing hash map was needed"
+                >
+            </div>
+
+            <details class="hint-details optional-hints" open>
+                <summary>Gradual hints</summary>
+                <div class="optional-hints-body">
+                    <div class="form-group">
+                        <label for="hint_1">Hint 1</label>
+                        <input type="text" id="hint_1" name="hint_1" value="<%= problem.hint_1 || '' %>">
+                    </div>
+                    <div class="form-group">
+                        <label for="hint_2">Hint 2</label>
+                        <input type="text" id="hint_2" name="hint_2" value="<%= problem.hint_2 || '' %>">
+                    </div>
+                    <div class="form-group">
+                        <label for="hint_3">Hint 3</label>
+                        <input type="text" id="hint_3" name="hint_3" value="<%= problem.hint_3 || '' %>">
+                    </div>
+                </div>
+            </details>
+        </div>
+    </details>
+
+    <div class="submit-actions">
+        <button type="submit" class="btn btn-schedule">Save Changes</button>
+        <a href="/problems/<%= difficulty %>" class="btn btn-secondary">Cancel</a>
+    </div>
+</form>
+</div>
+
+<%- include('partials/footer') %>

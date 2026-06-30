@@ -80,16 +80,48 @@
         </select>
     </div>
 
-    <div class="form-group">
-        <label for="code">Your Code Approach:</label>
-        <textarea
-            id="code"
-            name="code"
-            rows="10"
-            required
-            placeholder="Paste your code approach here..."
-        ></textarea>
-    </div>
+    <details class="optional-problem-details">
+        <summary>Optional problem notes</summary>
+        <div class="optional-notes-grid">
+            <div class="form-group">
+                <label for="code">Problem approach/insights</label>
+                <textarea
+                    id="code"
+                    name="code"
+                    rows="10"
+                    placeholder="Paste your approach, pattern, or implementation insight here..."
+                ></textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="mistake_made">Mistake made</label>
+                <input type="text" id="mistake_made" name="mistake_made" placeholder="Example: used set instead of map">
+            </div>
+
+            <div class="form-group">
+                <label for="hardest_part">Hardest part</label>
+                <input type="text" id="hardest_part" name="hardest_part" placeholder="Example: realizing hash map was needed">
+            </div>
+
+            <details class="hint-details optional-hints">
+                <summary>Add gradual hints</summary>
+                <div class="optional-hints-body">
+                    <div class="form-group">
+                        <label for="hint_1">Hint 1</label>
+                        <input type="text" id="hint_1" name="hint_1" placeholder="Small direction only">
+                    </div>
+                    <div class="form-group">
+                        <label for="hint_2">Hint 2</label>
+                        <input type="text" id="hint_2" name="hint_2" placeholder="Stronger nudge">
+                    </div>
+                    <div class="form-group">
+                        <label for="hint_3">Hint 3</label>
+                        <input type="text" id="hint_3" name="hint_3" placeholder="Almost reveals approach">
+                    </div>
+                </div>
+            </details>
+        </div>
+    </details>
 
     <div class="submit-actions">
         <button type="submit" name="action" value="schedule" class="btn btn-schedule">
@@ -109,6 +141,7 @@
     let seconds = 0;
     let startTime;
     let sessionChecked = false;
+    const MAX_TIMER_SECONDS = 90 * 60;
 
     const timerDisplay = document.getElementById('timerDisplay');
     const startBtn = document.getElementById('startTimerBtn');
@@ -121,6 +154,9 @@
     const codeInput = document.getElementById('code');
     const ignoreTimeInput = document.getElementById('ignoreTime');
     const adjustButtons = document.querySelectorAll('[data-adjust]');
+    const optionalNoteInputs = document.querySelectorAll(
+        '#mistake_made, #hardest_part, #hint_1, #hint_2, #hint_3'
+    );
 
     function formatTime(totalSeconds) {
         const minutes = String(
@@ -149,6 +185,9 @@
             code: codeInput.value,
             seconds,
             ignoreTime: ignoreTimeInput.checked,
+            optionalNotes: Object.fromEntries(
+                Array.from(optionalNoteInputs).map((input) => [input.name, input.value])
+            ),
             savedAt: Date.now()
         };
 
@@ -166,6 +205,10 @@
             ratingInput.value = draft.rating || '';
             codeInput.value = draft.code || '';
             ignoreTimeInput.checked = Boolean(draft.ignoreTime);
+            Object.entries(draft.optionalNotes || {}).forEach(([name, value]) => {
+                const input = document.querySelector(`[name="${name}"]`);
+                if (input) input.value = value || '';
+            });
             seconds = parseInt(draft.seconds, 10) || 0;
             updateTimer();
         } catch {
@@ -188,13 +231,13 @@
                 (Date.now() - startTime) / 1000
             );
 
-            if (seconds > 3599) {
-                seconds = 3599;
+            if (seconds > MAX_TIMER_SECONDS) {
+                seconds = MAX_TIMER_SECONDS;
             }
 
             updateTimer();
 
-            if (seconds >= 3599) {
+            if (seconds >= MAX_TIMER_SECONDS) {
                 clearInterval(timerInterval);
                 timerInterval = null;
                 startBtn.disabled = true;
@@ -229,7 +272,7 @@
     adjustButtons.forEach((button) => {
         button.addEventListener('click', () => {
             const change = parseInt(button.dataset.adjust, 10) || 0;
-            seconds = Math.min(Math.max(seconds + change, 0), 3599);
+            seconds = Math.min(Math.max(seconds + change, 0), MAX_TIMER_SECONDS);
 
             if (timerInterval) {
                 startTime = Date.now() - seconds * 1000;
@@ -239,7 +282,7 @@
         });
     });
 
-    [urlInput, ratingInput, codeInput, ignoreTimeInput].forEach((input) => {
+    [urlInput, ratingInput, codeInput, ignoreTimeInput, ...optionalNoteInputs].forEach((input) => {
         input.addEventListener('input', saveDraft);
         input.addEventListener('change', saveDraft);
     });
