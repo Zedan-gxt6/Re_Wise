@@ -1,20 +1,192 @@
 <%- include('partials/header') %>
 
-<h1>Add a New DSA Problem</h1>
-<p>Log a new problem you've recently solved or want to track.</p>
+<%
+    const isSolving = Boolean(locals.solveMode);
+    const solve = locals.solveData || {};
+    const isManualSolve = isSolving && solve.mode === "manual";
+    const isKnownSolve = isSolving && solve.mode === "known";
+    const pageTitle = isKnownSolve
+        ? `Solving: ${solve.title}`
+        : isManualSolve
+            ? "Solving: Unsupported Problem"
+            : "Add a New DSA Problem";
+%>
 
-<form action="/add" method="POST" class="add-problem-form">
+<h1 class="<%= isSolving ? 'solve-title' : '' %>"><%= pageTitle %></h1>
+<p>
+    <%= isSolving
+        ? "Track your solve details while the problem metadata stays ready in the background."
+        : "Log a new problem you've recently solved or want to track."
+    %>
+</p>
 
-   <div class="form-group">
-        <label for="url">Problem URL:</label>
-        <input
-            type="url"
-            id="url"
-            name="url"
-            required
-            placeholder="https://leetcode.com/problems/..."
-        >
+<% if (isSolving && solve.url) { %>
+    <div class="solve-source-actions">
+        <a href="<%= solve.url %>" target="_blank" class="btn btn-solve">Go to problem</a>
     </div>
+<% } %>
+
+<% if (isKnownSolve && locals.followedCards && followedCards.length > 0) { %>
+    <section class="social-solve-section">
+        <div class="social-section-heading">
+            <div>
+                <span>From Your Circle</span>
+                <h2>People you follow solved this</h2>
+            </div>
+            <p><%= followedCards.length %> visible card<%= followedCards.length === 1 ? '' : 's' %></p>
+        </div>
+
+        <div class="social-card-grid">
+            <% followedCards.forEach((card) => { %>
+                <article class="social-problem-card">
+                    <div class="social-card-header">
+                        <div class="mini-avatar">
+                            <% if (card.profile_pic_url) { %>
+                                <img src="<%= card.profile_pic_url %>" alt="<%= card.username %> profile photo">
+                            <% } else { %>
+                                <span><%= card.username.slice(0, 1).toUpperCase() %></span>
+                            <% } %>
+                        </div>
+                        <div>
+                            <h3><%= card.username %></h3>
+                            <p>
+                                Took <%= Math.round((card.time || 0) / 60) %> min |
+                                Level <%= card.rating %>
+                            </p>
+                        </div>
+                    </div>
+
+                    <% if (card.code) { %>
+                        <details class="hint-details" open>
+                            <summary>Approach</summary>
+                            <pre class="social-approach"><code><%= card.code %></code></pre>
+                        </details>
+                    <% } %>
+
+                    <% if (card.mistake_made || card.hardest_part || card.hint_1 || card.hint_2 || card.hint_3) { %>
+                        <details class="hint-details">
+                            <summary>Extra notes</summary>
+                            <div class="note-block">
+                                <% if (card.mistake_made) { %><p><strong>Mistake:</strong> <%= card.mistake_made %></p><% } %>
+                                <% if (card.hardest_part) { %><p><strong>Hardest part:</strong> <%= card.hardest_part %></p><% } %>
+                                <% if (card.hint_1) { %><p><strong>Hint 1:</strong> <%= card.hint_1 %></p><% } %>
+                                <% if (card.hint_2) { %><p><strong>Hint 2:</strong> <%= card.hint_2 %></p><% } %>
+                                <% if (card.hint_3) { %><p><strong>Hint 3:</strong> <%= card.hint_3 %></p><% } %>
+                            </div>
+                        </details>
+                    <% } %>
+
+                    <div class="social-card-actions">
+                        <form action="/problem-cards/<%= card.id %>/like" method="POST" class="social-like-form">
+                            <button type="submit" class="btn btn-secondary btn-sm">
+                                <span class="like-label"><%= card.liked_by_me ? 'Liked' : 'Like' %></span>
+                                |
+                                <span class="like-count"><%= card.likes_count %></span>
+                            </button>
+                        </form>
+                        <a href="/problem-cards/<%= card.id %>/comments" class="btn btn-secondary btn-sm">
+                            Comments | <%= card.comments_count %>
+                        </a>
+                    </div>
+                </article>
+            <% }) %>
+        </div>
+    </section>
+<% } else if (isKnownSolve) { %>
+    <section class="social-empty-card">
+        No one you follow has shared this problem card yet.
+    </section>
+<% } %>
+
+<form action="<%= isManualSolve ? '/add/manual' : '/add' %>" method="POST" class="add-problem-form">
+
+    <% if (isSolving) { %>
+        <input type="hidden" id="url" name="url" value="<%= solve.url || '' %>">
+    <% } else { %>
+       <div class="form-group">
+            <label for="url">Problem URL:</label>
+            <input
+                type="url"
+                id="url"
+                name="url"
+                required
+                placeholder="https://leetcode.com/problems/..."
+                value="<%= solve.url || '' %>"
+            >
+        </div>
+    <% } %>
+
+    <% if (isKnownSolve) { %>
+        <section class="solve-meta-card">
+            <div class="form-group">
+                <label for="topic_override">Auto detected topic</label>
+                <select id="topic_override" name="topic_override" required>
+                    <% topics.forEach((topic) => { %>
+                        <option value="<%= topic.id %>" <%= parseInt(solve.topic, 10) === topic.id ? 'selected' : '' %>>
+                            <%= topic.name %>
+                        </option>
+                    <% }) %>
+                </select>
+            </div>
+        </section>
+    <% } %>
+
+    <% if (isManualSolve) { %>
+        <section class="solve-meta-card manual-solve-card">
+            <p class="metadata-note"><%= solve.reason %></p>
+
+            <input type="hidden" name="solve_form" value="1">
+            <input type="hidden" name="slug" value="<%= solve.slug || '' %>">
+
+            <div class="form-group">
+                <label for="title">Problem title</label>
+                <input
+                    type="text"
+                    id="title"
+                    name="title"
+                    required
+                    value="<%= solve.title || '' %>"
+                    placeholder="Exact title on the platform"
+                >
+            </div>
+
+            <div class="form-group">
+                <label for="platform">Platform</label>
+                <input
+                    type="text"
+                    id="platform"
+                    name="platform"
+                    required
+                    value="<%= solve.platform || 'other' %>"
+                    placeholder="leetcode / neetcode250 / gfg / codechef / other"
+                >
+            </div>
+
+            <div class="form-group">
+                <label for="difficulty">Difficulty on platform</label>
+                <select id="difficulty" name="difficulty" required>
+                    <option value="" disabled <%= !solve.difficulty ? 'selected' : '' %>>Select difficulty</option>
+                    <% ["Easy", "Medium", "Hard"].forEach((difficulty) => { %>
+                        <option value="<%= difficulty %>" <%= solve.difficulty === difficulty ? 'selected' : '' %>>
+                            <%= difficulty %>
+                        </option>
+                    <% }) %>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="topic">Topic</label>
+                <select id="topic" name="topic" required>
+                    <option value="" disabled <%= !solve.topic ? 'selected' : '' %>>Choose topic</option>
+                    <% topics.forEach((topic) => { %>
+                        <option value="<%= topic.id %>" <%= parseInt(solve.topic, 10) === topic.id ? 'selected' : '' %>>
+                            <%= topic.name %>
+                        </option>
+                    <% }) %>
+                </select>
+            </div>
+        </section>
+    <% } %>
 
     <!-- TIMER SECTION -->
     <div class="form-group">
@@ -80,6 +252,15 @@
         </select>
     </div>
 
+    <div class="visibility-panel">
+        <label for="visibility">Who can see this problem card?</label>
+        <select id="visibility" name="visibility" required>
+            <option value="public" selected>Public to followers</option>
+            <option value="private">Private only me</option>
+        </select>
+        <small>Even public cards are only visible to people who follow you.</small>
+    </div>
+
     <details class="optional-problem-details">
         <summary>Optional problem notes</summary>
         <div class="optional-notes-grid">
@@ -136,7 +317,8 @@
 </form>
 
 <script>
-    const DRAFT_KEY = 'rewise:add-problem-draft';
+    const SOLVE_MODE = <%- JSON.stringify(isSolving) %>;
+    const DRAFT_KEY = `rewise:add-problem-draft:${SOLVE_MODE ? window.location.href : 'new'}`;
     let timerInterval = null;
     let seconds = 0;
     let startTime;
@@ -151,9 +333,13 @@
     const form = document.querySelector('.add-problem-form');
     const urlInput = document.getElementById('url');
     const ratingInput = document.getElementById('rating');
+    const visibilityInput = document.getElementById('visibility');
     const codeInput = document.getElementById('code');
     const ignoreTimeInput = document.getElementById('ignoreTime');
     const adjustButtons = document.querySelectorAll('[data-adjust]');
+    const metadataInputs = document.querySelectorAll(
+        '#title, #platform, #difficulty, #topic, #topic_override'
+    );
     const optionalNoteInputs = document.querySelectorAll(
         '#mistake_made, #hardest_part, #hint_1, #hint_2, #hint_3'
     );
@@ -182,9 +368,13 @@
         const draft = {
             url: urlInput.value,
             rating: ratingInput.value,
+            visibility: visibilityInput.value,
             code: codeInput.value,
             seconds,
             ignoreTime: ignoreTimeInput.checked,
+            metadata: Object.fromEntries(
+                Array.from(metadataInputs).map((input) => [input.name, input.value])
+            ),
             optionalNotes: Object.fromEntries(
                 Array.from(optionalNoteInputs).map((input) => [input.name, input.value])
             ),
@@ -201,10 +391,17 @@
         try {
             const draft = JSON.parse(rawDraft);
 
-            urlInput.value = draft.url || '';
+            if (!SOLVE_MODE) {
+                urlInput.value = draft.url || '';
+            }
             ratingInput.value = draft.rating || '';
+            visibilityInput.value = draft.visibility || 'public';
             codeInput.value = draft.code || '';
             ignoreTimeInput.checked = Boolean(draft.ignoreTime);
+            Object.entries(draft.metadata || {}).forEach(([name, value]) => {
+                const input = document.querySelector(`[name="${name}"]`);
+                if (input) input.value = value || '';
+            });
             Object.entries(draft.optionalNotes || {}).forEach(([name, value]) => {
                 const input = document.querySelector(`[name="${name}"]`);
                 if (input) input.value = value || '';
@@ -282,7 +479,7 @@
         });
     });
 
-    [urlInput, ratingInput, codeInput, ignoreTimeInput, ...optionalNoteInputs].forEach((input) => {
+    [urlInput, ratingInput, visibilityInput, codeInput, ignoreTimeInput, ...metadataInputs, ...optionalNoteInputs].forEach((input) => {
         input.addEventListener('input', saveDraft);
         input.addEventListener('change', saveDraft);
     });
@@ -312,7 +509,8 @@
 
             if (!data.authenticated) {
                 alert('Your login expired. I saved this problem draft. Login once and you will come back here.');
-                window.location.href = '/login?returnTo=/new';
+                const returnTo = `${window.location.pathname}${window.location.search}`;
+                window.location.href = `/login?returnTo=${encodeURIComponent(returnTo)}`;
                 return;
             }
 
@@ -321,6 +519,35 @@
         } catch {
             alert('Could not verify your login. Your draft is saved, please try again.');
         }
+    });
+
+    document.querySelectorAll('.social-like-form').forEach((likeForm) => {
+        likeForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+
+            const button = likeForm.querySelector('button');
+            const label = likeForm.querySelector('.like-label');
+            const count = likeForm.querySelector('.like-count');
+
+            button.disabled = true;
+
+            try {
+                const response = await fetch(likeForm.action, {
+                    method: 'POST',
+                    headers: { Accept: 'application/json' }
+                });
+
+                if (!response.ok) throw new Error('Like failed');
+
+                const data = await response.json();
+                label.textContent = data.liked ? 'Liked' : 'Like';
+                count.textContent = data.likesCount;
+            } catch {
+                likeForm.submit();
+            } finally {
+                button.disabled = false;
+            }
+        });
     });
 </script>
 

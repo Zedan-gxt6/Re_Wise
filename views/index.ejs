@@ -13,8 +13,21 @@
     </div>
 </div>
 
+<form action="/solve" method="GET" class="solve-url-panel">
+    <label for="dashboardProblemUrl">Start solving from URL</label>
+    <div class="solve-url-row">
+        <input
+            type="url"
+            id="dashboardProblemUrl"
+            name="url"
+            required
+            placeholder="Paste LeetCode / NeetCode / other problem URL..."
+        >
+        <button type="submit" class="btn btn-solve">Solve</button>
+    </div>
+</form>
+
 <div class="dashboard-buttons">
-    <a href="/new" class="btn btn-primary">+ Add New Problem</a>
     <a href="/problems/easy" class="btn btn-success">Easy Problems</a>
     <a href="/problems/medium" class="btn btn-warning">Medium Problems</a>
     <a href="/problems/hard" class="btn btn-danger">Hard Problems</a>
@@ -22,109 +35,5 @@
     <a href="/concepts/new" class="btn btn-turq">Add Concept</a> 
     <a href="/concepts" class="btn btn-pink">Due Concepts</a>
 </div>
-
-<script>
-    const problemInput = document.getElementById("problemDescription");
-    const hintsContainer = document.getElementById("hintsContainer");
-    const loadingHints = document.getElementById("loadingHints");
-
-    getHintsBtn.onclick = () => { modal.style.display = "block"; }
-    closeBtn.onclick = () => { modal.style.display = "none"; }
-    window.onclick = (e) => { if (e.target == modal) { modal.style.display = "none"; } }
-
-    generateBtn.onclick = async () => {
-        const desc = problemInput.value.trim();
-        if(!desc) return alert("Please enter a problem description");
-
-        hintsContainer.innerHTML = "";
-        loadingHints.style.display = "block";
-        generateBtn.disabled = true;
-
-        try {
-            const res = await fetch("/api/hints", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ problemDescription: desc })
-            });
-            const data = await res.json();
-
-            if (data.error) {
-                alert(data.error);
-                return;
-            }
-
-            parseAndRenderHints(data.content);
-        } catch (err) {
-            alert("Error generating hints");
-        } finally {
-            loadingHints.style.display = "none";
-            generateBtn.disabled = false;
-        }
-    };
-
-    function parseAndRenderHints(text) {
-        // Extract content between Start: and End.
-        let startIndex = text.indexOf("Start:");
-        let endIndex = text.indexOf("End.");
-        
-        if (startIndex === -1) startIndex = 0;
-        else startIndex += 6;
-        
-        if (endIndex === -1) endIndex = text.length;
-
-        const mainContent = text.substring(startIndex, endIndex).trim();
-        
-        const lines = mainContent.split('\n');
-        const sections = [];
-        let currentSection = null;
-
-        // Regex to identify headings defined in prompt
-        const headerRegex = /^(Hint \d+(?:,\d+)*.*?|Edge cases.*?|Time complexity.*?):?/i;
-
-        for (let line of lines) {
-            const match = line.match(headerRegex);
-            if (match) {
-                if (currentSection) {
-                    sections.push(currentSection);
-                }
-                let title = line.substring(0, match[0].length).replace(/:$/, '').trim();
-                let content = line.substring(match[0].length).trim() + '\n';
-                currentSection = { title, content };
-            } else {
-                if (currentSection) {
-                    currentSection.content += line + '\n';
-                } else if(line.trim()) {
-                    currentSection = { title: "Overview", content: line + '\n' };
-                }
-            }
-        }
-        if (currentSection) sections.push(currentSection);
-
-        sections.forEach((sec) => {
-            const details = document.createElement("details");
-            details.className = "hint-details";
-            
-            const summary = document.createElement("summary");
-            summary.textContent = sec.title;
-            
-            const contentDiv = document.createElement("div");
-            contentDiv.className = "hint-content";
-            
-            // Basic formatting
-            const escaped = sec.content
-                .replace(/&/g, "&amp;")
-                .replace(/</g, "&lt;")
-                .replace(/>/g, "&gt;");
-            
-            // Format code blocks
-            const formatted = escaped.replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>');
-            contentDiv.innerHTML = formatted.replace(/\n/g, "<br>");
-            
-            details.appendChild(summary);
-            details.appendChild(contentDiv);
-            hintsContainer.appendChild(details);
-        });
-    }
-</script>
 
 <%- include('partials/footer') %>

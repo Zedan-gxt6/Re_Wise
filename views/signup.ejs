@@ -43,6 +43,8 @@
     }
     input[type="text"],
     input[type="password"],
+    input[type="url"],
+    textarea,
     select {
       width: 100%;
       padding: 0.75rem;
@@ -58,7 +60,12 @@
       background-color: #1e293b;
       color: var(--text-main);
     }
-    input:focus, select:focus {
+    textarea {
+      resize: vertical;
+      min-height: 90px;
+      font-family: inherit;
+    }
+    input:focus, select:focus, textarea:focus {
       outline: none;
       border-color: var(--accent-primary);
       box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
@@ -100,28 +107,18 @@
         <input type="password" id="password" name="password" placeholder="Create a password" required />
       </div>
       <div class="form-group">
-        <label for="skill_level">Skill Level</label>
-        <select id="skill_level" name="skill_level" required>
-          <option value="" disabled selected>Select your level</option>
-          <option value="new">New</option>
-          <option value="intermediate">Intermediate</option>
-        </select>
+        <label for="bio">Bio <span style="color: var(--text-muted); font-weight: 400;">(optional)</span></label>
+        <textarea id="bio" name="bio" placeholder="Example: DSA grind, backend learner, aiming for interviews..."></textarea>
       </div>
       <div class="form-group">
-        <label for="prep_duration">Prep Duration</label>
-        <select id="prep_duration" name="prep_duration" required>
-          <option value="" disabled selected>Select preparation duration</option>
-          <option value="2months">2 months</option>
-          <option value="3months">3 months</option>
-          <option value="4months">4 months</option>
-          <option value="5months">5 months</option>
-          <option value="6months">6 months</option>
-          <option value="7months">7 months</option>
-          <option value="8months">8 months</option>
-          <option value="9months">9 months</option>
-          <option value="10months">10 months</option>
-          <option value="11months">11 months</option>
-          <option value="12months">12 months</option>
+        <label for="profile_pic_url">Profile photo URL <span style="color: var(--text-muted); font-weight: 400;">(optional)</span></label>
+        <input type="url" id="profile_pic_url" name="profile_pic_url" placeholder="https://example.com/photo.jpg" />
+      </div>
+      <div class="form-group">
+        <label for="is_public">Account Privacy</label>
+        <select id="is_public" name="is_public" required>
+          <option value="public" selected>Public</option>
+          <option value="private">Private</option>
         </select>
       </div>
       <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 0.5rem;">Create Account</button>

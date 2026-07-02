@@ -1,0 +1,102 @@
+<%- include('partials/header') %>
+
+<section class="profile-hero">
+    <div class="profile-avatar">
+        <% if (profileUser.profile_pic_url) { %>
+            <img src="<%= profileUser.profile_pic_url %>" alt="<%= profileUser.username %> profile photo">
+        <% } else { %>
+            <span><%= profileUser.username.slice(0, 1).toUpperCase() %></span>
+        <% } %>
+    </div>
+
+    <div class="profile-main">
+        <div class="profile-title-row">
+            <div>
+                <h1><%= profileUser.username %></h1>
+                <p class="privacy-pill"><%= profileUser.is_public ? "Public account" : "Private account" %></p>
+            </div>
+
+            <% if (isOwnProfile) { %>
+                <a href="/profile/edit" class="btn btn-secondary">Edit Profile</a>
+            <% } else if (followStatus === "accepted") { %>
+                <form action="/users/<%= profileUser.id %>/unfollow" method="POST">
+                    <button type="submit" class="btn btn-secondary">Following</button>
+                </form>
+            <% } else if (followStatus === "pending") { %>
+                <button class="btn btn-secondary" disabled>Request Sent</button>
+            <% } else { %>
+                <form action="/users/<%= profileUser.id %>/follow" method="POST">
+                    <button type="submit" class="btn btn-primary">
+                        <%= profileUser.is_public ? "Follow" : "Request Follow" %>
+                    </button>
+                </form>
+            <% } %>
+        </div>
+
+        <p class="profile-bio">
+            <%= profileUser.bio || "No bio added yet." %>
+        </p>
+    </div>
+</section>
+
+<section class="profile-stats">
+    <div>
+        <strong><%= stats.total_solved %></strong>
+        <span>Total solved</span>
+    </div>
+    <div>
+        <strong><%= stats.easy_solved %></strong>
+        <span>Easy</span>
+    </div>
+    <div>
+        <strong><%= stats.medium_solved %></strong>
+        <span>Medium</span>
+    </div>
+    <div>
+        <strong><%= stats.hard_solved %></strong>
+        <span>Hard</span>
+    </div>
+    <div>
+        <strong><%= followCounts.followers_count %></strong>
+        <span>Followers</span>
+    </div>
+    <div>
+        <strong><%= followCounts.following_count %></strong>
+        <span>Following</span>
+    </div>
+</section>
+
+<section class="profile-section">
+    <h2>Recent Solved Problems</h2>
+
+    <% if (!canViewRecentProblems) { %>
+        <div class="privacy-lock-card">
+            Recent problem cards are visible only to accepted followers.
+        </div>
+    <% } else if (recentProblems.length === 0) { %>
+        <div class="privacy-lock-card">
+            No solved problems yet.
+        </div>
+    <% } else { %>
+        <div class="recent-problem-list">
+            <% recentProblems.forEach((problem) => { %>
+                <article class="recent-problem-card">
+                    <div>
+                        <h3><%= problem.title %></h3>
+                        <p>
+                            <%= problem.difficulty || "Unknown difficulty" %>
+                            <% if (problem.topic_name) { %>
+                                | <%= problem.topic_name %>
+                            <% } %>
+                        </p>
+                    </div>
+                    <% if (problem.url) { %>
+                        <a href="<%= problem.url %>" target="_blank" class="btn btn-secondary btn-sm">Open</a>
+                    <% } %>
+                </article>
+            <% }) %>
+        </div>
+    <% } %>
+</section>
+
+<%- include('partials/footer') %>

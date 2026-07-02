@@ -1,0 +1,53 @@
+<%- include('partials/header') %>
+
+<section class="social-page-header">
+    <div>
+        <span>Activity</span>
+        <h1>Notifications</h1>
+    </div>
+
+    <% if (notifications.length > 0) { %>
+        <form action="/notifications/read-all" method="POST">
+            <button type="submit" class="btn btn-secondary">Mark all read</button>
+        </form>
+    <% } %>
+</section>
+
+<div class="notification-list">
+    <% if (notifications.length === 0) { %>
+        <div class="social-empty-card">No notifications yet.</div>
+    <% } else { %>
+        <% notifications.forEach((notification) => { %>
+            <article class="notification-card <%= notification.is_read ? '' : 'notification-unread' %>">
+                <div class="mini-avatar">
+                    <% if (notification.actor_profile_pic_url) { %>
+                        <img src="<%= notification.actor_profile_pic_url %>" alt="<%= notification.actor_username || 'User' %> profile photo">
+                    <% } else { %>
+                        <span><%= (notification.actor_username || 'R').slice(0, 1).toUpperCase() %></span>
+                    <% } %>
+                </div>
+
+                <div class="notification-main">
+                    <p><%= notification.message %></p>
+                    <small><%= new Date(notification.created_at).toLocaleString() %></small>
+                </div>
+
+                <div class="notification-actions">
+                    <form action="/notifications/<%= notification.id %>/read" method="POST">
+                        <button type="submit" class="btn <%= notification.type === 'followed_user_solved_problem' ? 'btn-solve' : 'btn-secondary' %> btn-sm">
+                            <%= notification.type === 'followed_user_solved_problem' ? 'Solve Now' : (notification.is_read ? 'Open' : 'Open & read') %>
+                        </button>
+                    </form>
+
+                    <% if (notification.type === 'followed_user_solved_problem' && !notification.is_read) { %>
+                        <form action="/notifications/<%= notification.id %>/later" method="POST">
+                            <button type="submit" class="btn btn-secondary btn-sm">Later</button>
+                        </form>
+                    <% } %>
+                </div>
+            </article>
+        <% }) %>
+    <% } %>
+</div>
+
+<%- include('partials/footer') %>

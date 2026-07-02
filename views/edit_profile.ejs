@@ -1,0 +1,34 @@
+<%- include('partials/header') %>
+
+<h1>Edit Profile</h1>
+<p>Keep this simple for now. Phase 2 will add followers and requests.</p>
+
+<form action="/profile/update" method="POST" class="profile-edit-form">
+    <div class="form-group">
+        <label for="bio">Bio</label>
+        <textarea id="bio" name="bio" rows="5" placeholder="Tell people what you are preparing for..."><%= user.bio || '' %></textarea>
+    </div>
+
+    <div class="form-group">
+        <label for="profile_pic_url">Profile photo URL</label>
+        <input
+            type="url"
+            id="profile_pic_url"
+            name="profile_pic_url"
+            value="<%= user.profile_pic_url || '' %>"
+            placeholder="https://example.com/photo.jpg"
+        >
+    </div>
+
+    <div class="form-group">
+        <label for="is_public">Account privacy</label>
+        <select id="is_public" name="is_public">
+            <option value="public" <%= user.is_public ? 'selected' : '' %>>Public</option>
+            <option value="private" <%= !user.is_public ? 'selected' : '' %>>Private</option>
+        </select>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Save Profile</button>
+</form>
+
+<%- include('partials/footer') %>

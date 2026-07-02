@@ -15,9 +15,20 @@
             <h2><a href="/" style="text-decoration: none; color: inherit;">Re_Wise</a></h2>
             <div class="nav-links">
                 <a href="/">Dashboard</a>
-                <a href="/new">Add Problem</a>
+                <a href="/profile/me">Profile</a>
+                <a href="/users/search">Search Users</a>
+                <a href="/follow-requests">Requests</a>
+                <a href="/notifications" class="notification-nav-link">
+                    Notifications
+                    <% if (locals.unreadNotifications > 0) { %>
+                        <span><%= locals.unreadNotifications %></span>
+                    <% } %>
+                </a>
                 <a href="/problems/filter">Filter Problems</a>
                 <a href="/concepts/all">Concepts</a>
+                <form action="/logout" method="POST" class="logout-form">
+                    <button type="submit">Logout</button>
+                </form>
             </div>
         </nav>
     </header>

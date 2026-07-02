@@ -30,12 +30,35 @@ import {
   getUserRevisionLoad,
   markTodayRevisionCompleted,
 } from "../services/schedulerService.js";
+import { getFollowedProblemCards } from "../services/socialService.js";
+import { notifyFollowersProblemSolved } from "../services/notificationService.js";
 
 const router = express.Router();
 
 async function renderManualProblemMetadata(req, res, reason, metadata = {}) {
   const topics = await getTopics();
   const extracted = extractProblemSlug(req.body.url);
+  const manualMetadata = {
+    platform: metadata.platform || extracted?.platform || "other",
+    slug: metadata.slug || extracted?.slug || "",
+    title: metadata.title || "",
+    difficulty: normalizeDifficulty(metadata.difficulty) || "",
+    topic: metadata.topic || "",
+  };
+
+  if (req.body.solve_form === "1") {
+    return res.render("new.ejs", {
+      solveMode: true,
+      topics,
+      followedCards: [],
+      solveData: {
+        mode: "manual",
+        url: req.body.url || "",
+        reason,
+        ...manualMetadata,
+      },
+    });
+  }
 
   return res.render("problem_metadata.ejs", {
     reason,
@@ -52,15 +75,100 @@ async function renderManualProblemMetadata(req, res, reason, metadata = {}) {
       hint_1: req.body.hint_1 || "",
       hint_2: req.body.hint_2 || "",
       hint_3: req.body.hint_3 || "",
+      visibility: req.body.visibility || "public",
     },
-    metadata: {
-      platform: metadata.platform || extracted?.platform || "other",
-      slug: metadata.slug || extracted?.slug || "",
-      title: metadata.title || "",
-      difficulty: normalizeDifficulty(metadata.difficulty) || "",
-      topic: metadata.topic || "",
-    },
+    metadata: manualMetadata,
   });
+}
+
+async function resolveProblemFromUrl(url) {
+  const extracted = extractProblemSlug(url);
+  if (!extracted) {
+    return {
+      mode: "manual",
+      reason: "This is not a supported problem URL yet. Fill the metadata manually and I will still track it.",
+      metadata: { platform: "other", slug: "", title: "", difficulty: "", topic: "" },
+    };
+  }
+
+  const platform = normalizePlatform(extracted.platform);
+  const existingProblem = await findProblemInAllProblems(platform, extracted.slug, url);
+
+  if (existingProblem) {
+    return {
+      mode: "known",
+      platform,
+      slug: extracted.slug,
+      problem: existingProblem,
+    };
+  }
+
+  if (platform === "leetcode") {
+    try {
+      const metadata = await fetchLeetcodeMetadata(extracted.slug);
+      const topic = mapLeetcodeTopic(metadata.topicTags);
+
+      if (!topic) {
+        return {
+          mode: "manual",
+          reason: "LeetCode found the problem, but I could not confidently map its topic. Choose the topic once.",
+          metadata: {
+            platform,
+            slug: metadata.titleSlug,
+            title: metadata.title,
+            difficulty: normalizeDifficulty(metadata.difficulty),
+            topic: "",
+          },
+        };
+      }
+
+      const problem = await insertAllProblem({
+        title: metadata.title,
+        url: problemUrlForStorage(platform, url, metadata.titleSlug),
+        difficulty: normalizeDifficulty(metadata.difficulty),
+        topic,
+        platform,
+      });
+
+      return {
+        mode: "known",
+        platform,
+        slug: metadata.titleSlug,
+        problem,
+      };
+    } catch (error) {
+      console.error("LeetCode metadata fetch error:", error);
+      return {
+        mode: "manual",
+        reason: "LeetCode lookup failed right now. Fill the metadata manually and continue.",
+        metadata: { platform, slug: extracted.slug, title: "", difficulty: "", topic: "" },
+      };
+    }
+  }
+
+  const reason = platform === "neetcode250"
+    ? "This NeetCode problem is outside your stored NeetCode 250 list, so automatic metadata is not supported for it yet."
+    : "This platform is not supported automatically yet. Fill the metadata manually and I will store it.";
+
+  return {
+    mode: "manual",
+    reason,
+    metadata: { platform, slug: extracted.slug, title: "", difficulty: "", topic: "" },
+  };
+}
+
+async function applyTopicOverride(req) {
+  const topicOverride = parseInt(req.body.topic_override, 10);
+  if (!Number.isInteger(topicOverride) || !req.problemLookup?.problem?.id) return;
+
+  const currentTopic = parseInt(req.problemLookup.problem.topic, 10);
+  if (topicOverride === currentTopic) return;
+
+  await db.query(
+    "UPDATE all_problems SET topic = $1 WHERE id = $2 AND platform = $3",
+    [topicOverride, req.problemLookup.problem.id, req.problemLookup.platform]
+  );
+  req.problemLookup.problem.topic = topicOverride;
 }
 
 async function attachProblemFromUrl(req, res, next) {
@@ -133,7 +241,62 @@ async function attachProblemFromUrl(req, res, next) {
   }
 }
 
-router.get("/new", requireAuth, (req, res) => res.render("new.ejs"));
+router.get("/new", requireAuth, (req, res) => res.redirect("/dashboard"));
+
+router.get("/solve", requireAuth, async (req, res) => {
+  const url = (req.query.url || "").trim();
+  if (!url) return res.redirect("/dashboard");
+
+  try {
+    const topics = await getTopics();
+    const result = await resolveProblemFromUrl(url);
+    const followedCards = result.mode === "known"
+      ? await getFollowedProblemCards(req.session.userId, result.platform, result.problem.id)
+      : [];
+
+    const solveData = result.mode === "known"
+      ? {
+          mode: "known",
+          url,
+          platform: result.platform,
+          slug: result.slug,
+          title: result.problem.title,
+          difficulty: normalizeDifficulty(result.problem.difficulty),
+          topic: result.problem.topic,
+          reason: "",
+        }
+      : {
+          mode: "manual",
+          url,
+          platform: result.metadata.platform,
+          slug: result.metadata.slug,
+          title: result.metadata.title,
+          difficulty: result.metadata.difficulty,
+          topic: result.metadata.topic,
+          reason: result.reason,
+        };
+
+    res.render("new.ejs", { solveMode: true, solveData, topics, followedCards });
+  } catch (error) {
+    console.error("Solve flow error:", error);
+    const topics = await getTopics();
+    res.render("new.ejs", {
+      solveMode: true,
+      topics,
+      followedCards: [],
+      solveData: {
+        mode: "manual",
+        url,
+        platform: "other",
+        slug: "",
+        title: "",
+        difficulty: "",
+        topic: "",
+        reason: "Automatic lookup failed. Fill the metadata manually and continue.",
+      },
+    });
+  }
+});
 
 router.get("/problems/filter", requireAuth, async (req, res) => {
   const filters = {
@@ -195,7 +358,9 @@ router.get("/problems/filter", requireAuth, async (req, res) => {
 
 router.post("/add", requireAuth, validateProblemSolveInput, attachProblemFromUrl, async (req, res) => {
   try {
-    await saveSolvedProblem(req, req.problemLookup);
+    await applyTopicOverride(req);
+    const solvedProblem = await saveSolvedProblem(req, req.problemLookup);
+    await notifyFollowersProblemSolved(req.session.userId, solvedProblem.id);
     res.redirect("/");
   } catch (error) {
     console.error("Error inserting data:", error);
@@ -228,7 +393,8 @@ router.post("/add/manual", requireAuth, async (req, res) => {
       });
     }
 
-    await saveSolvedProblem(req, { platform: normalizedPlatform, slug: problemSlug, problem });
+    const solvedProblem = await saveSolvedProblem(req, { platform: normalizedPlatform, slug: problemSlug, problem });
+    await notifyFollowersProblemSolved(req.session.userId, solvedProblem.id);
     res.redirect("/");
   } catch (error) {
     console.error("Manual problem add error:", error);

@@ -8,6 +8,7 @@
     <input type="hidden" name="rating" value="<%= original.rating %>">
     <input type="hidden" name="time" value="<%= original.time %>">
     <input type="hidden" name="action" value="<%= original.action %>">
+    <input type="hidden" name="visibility" value="<%= original.visibility || 'public' %>">
     <input type="hidden" name="slug" value="<%= metadata.slug %>">
     <% if (original.ignore_time === 'on') { %>
         <input type="hidden" name="ignore_time" value="on">

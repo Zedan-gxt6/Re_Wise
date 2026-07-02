@@ -1,0 +1,43 @@
+<%- include('partials/header') %>
+
+<section class="social-page-header">
+    <div>
+        <span>Private Account Control</span>
+        <h1>Follow Requests</h1>
+    </div>
+    <a href="/users/search" class="btn btn-secondary">Search Users</a>
+</section>
+
+<div class="user-result-list">
+    <% if (requests.length === 0) { %>
+        <div class="social-empty-card">No pending follow requests.</div>
+    <% } else { %>
+        <% requests.forEach((request) => { %>
+            <article class="user-result-card">
+                <div class="mini-avatar">
+                    <% if (request.profile_pic_url) { %>
+                        <img src="<%= request.profile_pic_url %>" alt="<%= request.username %> profile photo">
+                    <% } else { %>
+                        <span><%= request.username.slice(0, 1).toUpperCase() %></span>
+                    <% } %>
+                </div>
+
+                <div class="user-result-main">
+                    <h3><a href="/users/<%= request.requester_id %>"><%= request.username %></a></h3>
+                    <p><%= request.bio || "No bio yet." %></p>
+                </div>
+
+                <div class="request-actions">
+                    <form action="/follow-requests/<%= request.id %>/respond" method="POST">
+                        <button type="submit" name="action" value="accept" class="btn btn-mastered btn-sm">Accept</button>
+                    </form>
+                    <form action="/follow-requests/<%= request.id %>/respond" method="POST">
+                        <button type="submit" name="action" value="reject" class="btn btn-secondary btn-sm">Reject</button>
+                    </form>
+                </div>
+            </article>
+        <% }) %>
+    <% } %>
+</div>
+
+<%- include('partials/footer') %>

@@ -10,6 +10,10 @@ import authRoutes from "./routes/authRoutes.js";
 import dashboardRoutes from "./routes/dashboardRoutes.js";
 import problemRoutes from "./routes/problemRoutes.js";
 import conceptRoutes from "./routes/conceptRoutes.js";
+import socialRoutes from "./routes/socialRoutes.js";
+import notificationRoutes from "./routes/notificationRoutes.js";
+import profileRoutes from "./routes/profileRoutes.js";
+import { getUnreadNotificationCount } from "./services/notificationService.js";
 
 dotenv.config();
 
@@ -35,10 +39,26 @@ app.use(session({
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.json());
 
+app.use(async (req, res, next) => {
+  res.locals.unreadNotifications = 0;
+  if (!req.session?.userId) return next();
+
+  try {
+    res.locals.unreadNotifications = await getUnreadNotificationCount(req.session.userId);
+  } catch (error) {
+    console.error("Unread notification count error:", error);
+  }
+
+  next();
+});
+
 app.use(authRoutes);
 app.use(dashboardRoutes);
 app.use(problemRoutes);
 app.use(conceptRoutes);
+app.use(socialRoutes);
+app.use(notificationRoutes);
+app.use(profileRoutes);
 
 app.listen(port, () => {
   console.log(`Server up and running on http://localhost:${port}`);

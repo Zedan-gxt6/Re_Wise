@@ -1,0 +1,40 @@
+<%- include('partials/header') %>
+
+<section class="social-page-header">
+    <div>
+        <span>Discussion</span>
+        <h1>Problem Card Comments</h1>
+    </div>
+    <a href="javascript:history.back()" class="btn btn-secondary">Back</a>
+</section>
+
+<% if (canComment) { %>
+    <form action="/problem-cards/<%= card.id %>/comments" method="POST" class="comment-form">
+        <textarea name="comment" rows="4" required placeholder="Add a helpful comment..."></textarea>
+        <button type="submit" class="btn btn-solve">Post Comment</button>
+    </form>
+<% } %>
+
+<div class="comment-list">
+    <% if (comments.length === 0) { %>
+        <div class="social-empty-card">No comments yet.</div>
+    <% } else { %>
+        <% comments.forEach((comment) => { %>
+            <article class="comment-card">
+                <div class="mini-avatar">
+                    <% if (comment.profile_pic_url) { %>
+                        <img src="<%= comment.profile_pic_url %>" alt="<%= comment.username %> profile photo">
+                    <% } else { %>
+                        <span><%= comment.username.slice(0, 1).toUpperCase() %></span>
+                    <% } %>
+                </div>
+                <div>
+                    <h3><%= comment.username %></h3>
+                    <p><%= comment.comment %></p>
+                </div>
+            </article>
+        <% }) %>
+    <% } %>
+</div>
+
+<%- include('partials/footer') %>

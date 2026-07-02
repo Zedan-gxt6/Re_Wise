@@ -71,6 +71,7 @@ export async function saveSolvedProblem(req, problemLookup) {
   const { rating, time, code, action, ignore_time, mistake_made, hardest_part, hint_1, hint_2, hint_3 } = req.body;
   const problem = problemLookup.problem;
   const status = action === "mastered" ? "MASTERED" : "LEARNING";
+  const visibility = req.body.visibility === "private" ? "private" : "public";
   const parsedTime = getTimeForScoring(problem, time, ignore_time);
   const decayConstant = await getUserDecayConstant(req.session.userId, problem.topic);
   const baseStrength = calculateBaseStrength(problem.difficulty, rating, parsedTime);
@@ -79,12 +80,13 @@ export async function saveSolvedProblem(req, problemLookup) {
     ? 0
     : calculateReviewDays(baseStrength, currentThreshold, decayConstant);
 
-  await db.query(
+  const result = await db.query(
     `INSERT INTO problems_solved
        (prob_id, rating, time, code, mistake_made, hardest_part, hint_1, hint_2, hint_3,
-        base_strength, current_threshold, last_rev_date, due_date, status, user_id, platform)
+        base_strength, current_threshold, last_rev_date, due_date, status, user_id, platform, visibility)
      VALUES
-       ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW(), NOW() + INTERVAL '1 day' * ($12::INTEGER), $13, $14, $15)`,
+       ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW(), NOW() + INTERVAL '1 day' * ($12::INTEGER), $13, $14, $15, $16)
+     RETURNING id, visibility`,
     [
       problem.id,
       rating,
@@ -101,8 +103,11 @@ export async function saveSolvedProblem(req, problemLookup) {
       status,
       req.session.userId,
       problemLookup.platform,
+      visibility,
     ]
   );
+
+  return result.rows[0];
 }
 
 export function validateProblemSolveInput(req, res, next) {

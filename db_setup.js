@@ -28,6 +28,9 @@ async function setup() {
         password_hashed VARCHAR(255) NOT NULL,
         "prepDuration" INTEGER,
         skill_level VARCHAR(50),
+        bio TEXT,
+        profile_pic_url TEXT,
+        is_public BOOLEAN DEFAULT true,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
@@ -62,8 +65,53 @@ async function setup() {
         review_days INTEGER,
         due_date TIMESTAMP,
         status VARCHAR(20),
+        visibility VARCHAR(20) DEFAULT 'public',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         user_id INTEGER REFERENCES users(id) ON DELETE SET NULL
+      );
+    `);
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS follows (
+        id SERIAL PRIMARY KEY,
+        follower_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        following_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        status VARCHAR(20) NOT NULL DEFAULT 'accepted',
+        created_at TIMESTAMP DEFAULT NOW(),
+        UNIQUE(follower_id, following_id),
+        CHECK (follower_id <> following_id),
+        CHECK (status IN ('pending', 'accepted'))
+      );
+    `);
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS problem_card_likes (
+        id SERIAL PRIMARY KEY,
+        problem_solved_id INTEGER NOT NULL REFERENCES problems_solved(id) ON DELETE CASCADE,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        created_at TIMESTAMP DEFAULT NOW(),
+        UNIQUE(problem_solved_id, user_id)
+      );
+    `);
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS problem_card_comments (
+        id SERIAL PRIMARY KEY,
+        problem_solved_id INTEGER NOT NULL REFERENCES problems_solved(id) ON DELETE CASCADE,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        comment TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT NOW()
+      );
+    `);
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS notifications (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        actor_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+        type VARCHAR(50) NOT NULL,
+        entity_type VARCHAR(50),
+        entity_id INTEGER,
+        message TEXT NOT NULL,
+        target_url TEXT,
+        is_read BOOLEAN DEFAULT false,
+        created_at TIMESTAMP DEFAULT NOW()
       );
     `);
     // Insert topics if not already present
