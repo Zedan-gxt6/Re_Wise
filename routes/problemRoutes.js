@@ -162,13 +162,15 @@ async function applyTopicOverride(req) {
   if (!Number.isInteger(topicOverride) || !req.problemLookup?.problem?.id) return;
 
   const currentTopic = parseInt(req.problemLookup.problem.topic, 10);
-  if (topicOverride === currentTopic) return;
+  if (topicOverride !== currentTopic) {
+    await db.query(
+      "UPDATE all_problems SET topic = $1 WHERE id = $2 AND platform = $3",
+      [topicOverride, req.problemLookup.problem.id, req.problemLookup.platform]
+    );
+    req.problemLookup.problem.topic = topicOverride;
+  }
 
-  await db.query(
-    "UPDATE all_problems SET topic = $1 WHERE id = $2 AND platform = $3",
-    [topicOverride, req.problemLookup.problem.id, req.problemLookup.platform]
-  );
-  req.problemLookup.problem.topic = topicOverride;
+  req.problemLookup.topicId = topicOverride;
 }
 
 async function attachProblemFromUrl(req, res, next) {
@@ -312,7 +314,7 @@ router.get("/problems/filter", requireAuth, async (req, res) => {
 
   if (filters.topic) {
     values.push(parseInt(filters.topic, 10));
-    where.push(`ap.topic = $${values.length}`);
+    where.push(`COALESCE(ps.topic_id, ap.topic) = $${values.length}`);
   }
   if (filters.independence) {
     values.push(parseInt(filters.independence, 10));
@@ -340,10 +342,10 @@ router.get("/problems/filter", requireAuth, async (req, res) => {
     const result = await db.query(
       `SELECT ps.*, COALESCE(ap.title, 'Unmapped Problem') AS title,
               CASE WHEN ap.platform = 'neetcode250' THEN 'https://neetcode.io/problems/' || TRIM(TRAILING '/' FROM ap.url) ELSE ap.url END AS url,
-              ap.difficulty AS problem_difficulty, ap.platform AS problem_platform, t.name AS topic_name
+              ap.difficulty AS problem_difficulty, COALESCE(ps.topic_id, ap.topic) AS topic_id, ap.platform AS problem_platform, t.name AS topic_name
        FROM problems_solved ps
        LEFT JOIN all_problems ap ON ps.platform = ap.platform AND ps.prob_id = ap.id
-       LEFT JOIN topics t ON ap.topic = t.id
+       LEFT JOIN topics t ON COALESCE(ps.topic_id, ap.topic) = t.id
        WHERE ${where.join(" AND ")}
        ORDER BY ps.created_at DESC`,
       values
@@ -414,22 +416,24 @@ router.get("/problems/:difficulty", requireAuth, async (req, res) => {
       const result = await db.query(
         `SELECT ps.*, COALESCE(ap.title, 'Unmapped Problem') AS title,
                 CASE WHEN ap.platform = 'neetcode250' THEN 'https://neetcode.io/problems/' || TRIM(TRAILING '/' FROM ap.url) ELSE ap.url END AS url,
-                ap.difficulty AS problem_difficulty, ap.topic AS topic_id, t.name AS topic_name
+                ap.difficulty AS problem_difficulty, COALESCE(ps.topic_id, ap.topic) AS topic_id, t.name AS topic_name
          FROM problems_solved ps
          LEFT JOIN all_problems ap ON ps.platform = ap.platform AND ps.prob_id = ap.id
-         LEFT JOIN topics t ON ap.topic = t.id
+         LEFT JOIN topics t ON COALESCE(ps.topic_id, ap.topic) = t.id
          WHERE ps.due_date <= NOW() AND (ps.status IS NULL OR ps.status != 'MASTERED') AND ps.user_id = $1
          ORDER BY ps.due_date ASC`,
         [req.session.userId]
       );
       const plannedProblems = await getOrCreateTodayRevisionPlan(req.session.userId, result.rows);
       const revisionLoad = await getUserRevisionLoad(req.session.userId);
+      const topics = await getTopics();
 
       return res.render("problems.ejs", {
         problems: plannedProblems,
         title: "Today's Revision Problems",
         difficulty: "due",
         revisionLoad: Math.floor(revisionLoad),
+        topics,
       });
     } catch (err) {
       console.error(err);
@@ -440,19 +444,20 @@ router.get("/problems/:difficulty", requireAuth, async (req, res) => {
   }
 
   try {
+    const topics = await getTopics();
     const result = await db.query(
       `SELECT ps.*, COALESCE(ap.title, 'Unmapped Problem') AS title,
               CASE WHEN ap.platform = 'neetcode250' THEN 'https://neetcode.io/problems/' || TRIM(TRAILING '/' FROM ap.url) ELSE ap.url END AS url,
-              ap.difficulty AS problem_difficulty, ap.topic AS topic_id, t.name AS topic_name
+              ap.difficulty AS problem_difficulty, COALESCE(ps.topic_id, ap.topic) AS topic_id, t.name AS topic_name
        FROM problems_solved ps
        LEFT JOIN all_problems ap ON ps.platform = ap.platform AND ps.prob_id = ap.id
-       LEFT JOIN topics t ON ap.topic = t.id
+       LEFT JOIN topics t ON COALESCE(ps.topic_id, ap.topic) = t.id
        WHERE ap.difficulty = $1 AND ps.user_id = $2
        ORDER BY ps.created_at DESC`,
       [title.replace(" Problems", ""), req.session.userId]
     );
 
-    res.render("problems.ejs", { problems: result.rows, title, difficulty });
+    res.render("problems.ejs", { problems: result.rows, title, difficulty, topics });
   } catch (err) {
     console.error(err);
     res.status(500).send("Error fetching problems");
@@ -471,7 +476,7 @@ router.get("/problems/:difficulty/:id/edit", requireAuth, async (req, res) => {
               t.name AS topic_name
        FROM problems_solved ps
        LEFT JOIN all_problems ap ON ps.platform = ap.platform AND ps.prob_id = ap.id
-       LEFT JOIN topics t ON ap.topic = t.id
+       LEFT JOIN topics t ON COALESCE(ps.topic_id, ap.topic) = t.id
        WHERE ps.id = $1 AND ps.user_id = $2`,
       [req.params.id, req.session.userId]
     );
@@ -536,7 +541,7 @@ router.post("/problems/:difficulty/:id/master", requireAuth, async (req, res) =>
 router.post("/problems/:difficulty/:id/schedule", requireAuth, async (req, res) => {
   try {
     const result = await db.query(
-      `SELECT ps.rating, ps.time, ap.difficulty, ap.topic
+      `SELECT ps.rating, ps.time, ap.difficulty, COALESCE(ps.topic_id, ap.topic) AS topic_id
        FROM problems_solved ps
        JOIN all_problems ap ON ps.platform = ap.platform AND ps.prob_id = ap.id
        WHERE ps.id = $1 AND ps.user_id = $2`,
@@ -545,7 +550,7 @@ router.post("/problems/:difficulty/:id/schedule", requireAuth, async (req, res) 
     if (result.rows.length === 0) return res.status(404).send("Problem not found");
 
     const problem = result.rows[0];
-    const decayConstant = await getUserDecayConstant(req.session.userId, problem.topic);
+    const decayConstant = await getUserDecayConstant(req.session.userId, problem.topic_id);
     const baseStrength = calculateBaseStrength(problem.difficulty, problem.rating, problem.time);
     const currentThreshold = getInitialThreshold(problem.difficulty);
     const reviewDays = calculateReviewDays(baseStrength, currentThreshold, decayConstant);
@@ -571,10 +576,12 @@ router.post("/problems/:difficulty/:id/revise", requireAuth, async (req, res) =>
 
   try {
     const result = await db.query(
-      `SELECT ps.base_strength, ps.current_threshold, ps.revisions_done, ap.difficulty, ap.topic, uc.decay_constant
+      `SELECT ps.base_strength, ps.current_threshold, ps.revisions_done, ap.difficulty,
+              COALESCE(ps.topic_id, ap.topic) AS topic_id,
+              uc.decay_constant
        FROM problems_solved ps
        JOIN all_problems ap ON ps.platform = ap.platform AND ps.prob_id = ap.id
-       LEFT JOIN user_constants uc ON uc.user_id = ps.user_id AND uc.topic_id = ap.topic
+       LEFT JOIN user_constants uc ON uc.user_id = ps.user_id AND uc.topic_id = COALESCE(ps.topic_id, ap.topic)
        WHERE ps.id = $1 AND ps.user_id = $2`,
       [req.params.id, req.session.userId]
     );
@@ -594,12 +601,12 @@ router.post("/problems/:difficulty/:id/revise", requireAuth, async (req, res) =>
 
     const constantUpdate = await db.query(
       `UPDATE user_constants SET decay_constant = $1 WHERE user_id = $2 AND topic_id = $3`,
-      [newDecayConstant, req.session.userId, problem.topic]
+      [newDecayConstant, req.session.userId, problem.topic_id]
     );
     if (constantUpdate.rowCount === 0) {
       await db.query(
         `INSERT INTO user_constants (user_id, topic_id, decay_constant) VALUES ($1, $2, $3)`,
-        [req.session.userId, problem.topic, newDecayConstant]
+        [req.session.userId, problem.topic_id, newDecayConstant]
       );
     }
 

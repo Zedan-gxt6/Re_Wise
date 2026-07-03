@@ -69,7 +69,7 @@ export async function getRecentSolvedProblems(userId, limit = 10, includePrivate
             t.name AS topic_name
      FROM problems_solved ps
      LEFT JOIN all_problems ap ON ps.platform = ap.platform AND ps.prob_id = ap.id
-     LEFT JOIN topics t ON ap.topic = t.id
+     LEFT JOIN topics t ON COALESCE(ps.topic_id, ap.topic) = t.id
      WHERE ps.user_id = $1
        ${visibilityClause}
      ORDER BY ps.created_at DESC

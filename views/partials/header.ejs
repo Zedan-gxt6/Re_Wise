@@ -12,20 +12,24 @@
 <body>
     <header>
         <nav class="navbar">
-            <h2><a href="/" style="text-decoration: none; color: inherit;">Re_Wise</a></h2>
-            <div class="nav-links">
-                <a href="/">Dashboard</a>
+            <a href="/" class="brand-mark">
+                <img src="/rewise-logo.svg" alt="" class="brand-logo">
+                <span>Re_Wise</span>
+            </a>
+
+            <div class="nav-actions">
+                <a href="/problems/filter">All Problems</a>
+                <a href="/concepts/all">All Concepts</a>
                 <a href="/profile/me">Profile</a>
-                <a href="/users/search">Search Users</a>
-                <a href="/follow-requests">Requests</a>
-                <a href="/notifications" class="notification-nav-link">
-                    Notifications
+                <a href="/notifications" class="notification-nav-link" aria-label="Notifications">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M18 16v-5a6 6 0 0 0-12 0v5l-2 2h16l-2-2Z"></path>
+                        <path d="M9.5 20a2.5 2.5 0 0 0 5 0"></path>
+                    </svg>
                     <% if (locals.unreadNotifications > 0) { %>
                         <span><%= locals.unreadNotifications %></span>
                     <% } %>
                 </a>
-                <a href="/problems/filter">Filter Problems</a>
-                <a href="/concepts/all">Concepts</a>
                 <form action="/logout" method="POST" class="logout-form">
                     <button type="submit">Logout</button>
                 </form>

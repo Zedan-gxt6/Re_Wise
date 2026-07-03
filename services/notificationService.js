@@ -49,11 +49,26 @@ export async function markNotificationRead(userId, notificationId) {
   return result.rows[0] || null;
 }
 
+export async function getNotificationForUser(userId, notificationId) {
+  const result = await db.query(
+    `SELECT *
+     FROM notifications
+     WHERE id = $1 AND user_id = $2`,
+    [notificationId, userId]
+  );
+
+  return result.rows[0] || null;
+}
+
 export async function markAllNotificationsRead(userId) {
   await db.query(
     "UPDATE notifications SET is_read = true WHERE user_id = $1 AND is_read = false",
     [userId]
   );
+}
+
+export async function clearNotifications(userId) {
+  await db.query("DELETE FROM notifications WHERE user_id = $1", [userId]);
 }
 
 export async function notifyFollowRequest(requesterId, targetUserId) {
@@ -94,23 +109,26 @@ export async function notifyProblemCardLiked(actorId, problemSolvedId) {
     entityType: "problem_card",
     entityId: problemSolvedId,
     message: `${actor} liked your ${card.title} problem card.`,
-    targetUrl: `/problem-cards/${problemSolvedId}/comments`,
+    targetUrl: null,
   });
 }
 
-export async function notifyProblemCardCommented(actorId, problemSolvedId) {
+export async function notifyProblemCardCommented(actorId, problemSolvedId, comment) {
   const card = await getProblemCardNotificationInfo(problemSolvedId);
   if (!card) return null;
 
   const actor = await getUsername(actorId);
+  const cleanComment = String(comment || "").trim();
+  const preview = cleanComment.length > 160 ? `${cleanComment.slice(0, 157)}...` : cleanComment;
+
   return createNotification({
     userId: card.user_id,
     actorId,
     type: "problem_card_commented",
     entityType: "problem_card",
     entityId: problemSolvedId,
-    message: `${actor} commented on your ${card.title} problem card.`,
-    targetUrl: `/problem-cards/${problemSolvedId}/comments`,
+    message: `${actor} commented on your ${card.title}: "${preview}"`,
+    targetUrl: null,
   });
 }
 

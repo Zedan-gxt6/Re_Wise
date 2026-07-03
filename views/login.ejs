@@ -22,7 +22,7 @@
       backdrop-filter: blur(10px);
       box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
     }
-    .card h2 {
+    .card > h2 {
       text-align: center;
       margin-bottom: 1.5rem;
       background: linear-gradient(to right, #3b82f6, #8b5cf6);
@@ -58,19 +58,19 @@
       border-color: var(--accent-primary);
       box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
     }
-    .card p {
+    .card > p {
       margin-top: 1.5rem;
       text-align: center;
       color: var(--text-muted);
       font-size: 0.95rem;
     }
-    .card p a {
+    .card > p a {
       color: var(--accent-info);
       text-decoration: none;
       font-weight: 500;
       transition: color 0.2s ease;
     }
-    .card p a:hover {
+    .card > p a:hover {
       color: var(--accent-primary);
       text-decoration: underline;
     }
@@ -84,7 +84,11 @@
 </head>
 <body>
   <div class="card">
-    <h2>Re_Wise</h2>
+    <div class="login-brand">
+      <img src="/rewise-logo.svg" alt="Re_Wise logo">
+      <h2>Re_Wise</h2>
+      <p>Revise smarter. Learn together.</p>
+    </div>
     <form id="loginForm">
       <div class="form-group">
         <label for="username">Username</label>

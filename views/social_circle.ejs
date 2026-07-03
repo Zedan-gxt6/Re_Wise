@@ -1,0 +1,130 @@
+<%- include('partials/header') %>
+
+<section class="social-page-header">
+    <div>
+        <span>Social Circle</span>
+        <h1>People you learn with</h1>
+    </div>
+</section>
+
+<nav class="social-tabs" aria-label="Social Circle tabs">
+    <a href="/social?tab=search" class="<%= tab === 'search' ? 'active' : '' %>">Search Users</a>
+    <a href="/social?tab=followers" class="<%= tab === 'followers' ? 'active' : '' %>">Followers <span><%= followers.length %></span></a>
+    <a href="/social?tab=following" class="<%= tab === 'following' ? 'active' : '' %>">Following <span><%= following.length %></span></a>
+</nav>
+
+<% if (tab === 'search') { %>
+    <form action="/social" method="GET" class="user-search-form">
+        <input type="hidden" name="tab" value="search">
+        <input
+            type="text"
+            name="q"
+            value="<%= query || '' %>"
+            placeholder="Search by username..."
+            autocomplete="off"
+        >
+        <button type="submit" class="btn btn-solve">Search</button>
+    </form>
+
+    <div class="user-result-list">
+        <% if (!query) { %>
+            <div class="social-empty-card">Type a username to find people.</div>
+        <% } else if (users.length === 0) { %>
+            <div class="social-empty-card">No users found.</div>
+        <% } else { %>
+            <% users.forEach((user) => { %>
+                <article class="user-result-card">
+                    <div class="mini-avatar">
+                        <% if (user.profile_pic_url) { %>
+                            <img src="<%= user.profile_pic_url %>" alt="<%= user.username %> profile photo">
+                        <% } else { %>
+                            <span><%= user.username.slice(0, 1).toUpperCase() %></span>
+                        <% } %>
+                    </div>
+
+                    <div class="user-result-main">
+                        <h3><a href="/users/<%= user.id %>"><%= user.username %></a></h3>
+                        <p><%= user.bio || "No bio yet." %></p>
+                        <span class="privacy-pill"><%= user.is_public ? "Public account" : "Private account" %></span>
+                    </div>
+
+                    <div class="user-result-action">
+                        <% if (user.follow_status === "accepted") { %>
+                            <form action="/users/<%= user.id %>/unfollow" method="POST">
+                                <button type="submit" class="btn btn-secondary btn-sm">Following</button>
+                            </form>
+                        <% } else if (user.follow_status === "pending") { %>
+                            <button class="btn btn-secondary btn-sm" disabled>Requested</button>
+                        <% } else { %>
+                            <form action="/users/<%= user.id %>/follow" method="POST">
+                                <button type="submit" class="btn btn-primary btn-sm">
+                                    <%= user.is_public ? "Follow" : "Request" %>
+                                </button>
+                            </form>
+                        <% } %>
+                    </div>
+                </article>
+            <% }) %>
+        <% } %>
+    </div>
+<% } %>
+
+<% if (tab === 'followers') { %>
+    <div class="user-result-list">
+        <% if (followers.length === 0) { %>
+            <div class="social-empty-card">No followers yet.</div>
+        <% } else { %>
+            <% followers.forEach((user) => { %>
+                <article class="user-result-card">
+                    <div class="mini-avatar">
+                        <% if (user.profile_pic_url) { %>
+                            <img src="<%= user.profile_pic_url %>" alt="<%= user.username %> profile photo">
+                        <% } else { %>
+                            <span><%= user.username.slice(0, 1).toUpperCase() %></span>
+                        <% } %>
+                    </div>
+                    <div class="user-result-main">
+                        <h3><a href="/users/<%= user.id %>"><%= user.username %></a></h3>
+                        <p><%= user.bio || "No bio yet." %></p>
+                    </div>
+                    <div class="user-result-action">
+                        <form action="/followers/<%= user.id %>/remove" method="POST">
+                            <button type="submit" class="btn btn-secondary btn-sm">Remove</button>
+                        </form>
+                    </div>
+                </article>
+            <% }) %>
+        <% } %>
+    </div>
+<% } %>
+
+<% if (tab === 'following') { %>
+    <div class="user-result-list">
+        <% if (following.length === 0) { %>
+            <div class="social-empty-card">You are not following anyone yet.</div>
+        <% } else { %>
+            <% following.forEach((user) => { %>
+                <article class="user-result-card">
+                    <div class="mini-avatar">
+                        <% if (user.profile_pic_url) { %>
+                            <img src="<%= user.profile_pic_url %>" alt="<%= user.username %> profile photo">
+                        <% } else { %>
+                            <span><%= user.username.slice(0, 1).toUpperCase() %></span>
+                        <% } %>
+                    </div>
+                    <div class="user-result-main">
+                        <h3><a href="/users/<%= user.id %>"><%= user.username %></a></h3>
+                        <p><%= user.bio || "No bio yet." %></p>
+                    </div>
+                    <div class="user-result-action">
+                        <form action="/users/<%= user.id %>/unfollow" method="POST">
+                            <button type="submit" class="btn btn-secondary btn-sm">Unfollow</button>
+                        </form>
+                    </div>
+                </article>
+            <% }) %>
+        <% } %>
+    </div>
+<% } %>
+
+<%- include('partials/footer') %>

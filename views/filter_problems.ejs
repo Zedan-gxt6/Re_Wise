@@ -14,6 +14,17 @@ function independenceLabel(rating) {
     if (rating === 3) return "Major Hints / Couldn't Solve";
     return 'N/A';
 }
+
+function hasNotes(problem) {
+    return Boolean(
+        problem.code ||
+        problem.mistake_made ||
+        problem.hardest_part ||
+        problem.hint_1 ||
+        problem.hint_2 ||
+        problem.hint_3
+    );
+}
 %>
 
 <h1>Filter Solved Problems <span class="count-badge"><%= problems.length %></span></h1>
@@ -102,19 +113,36 @@ function independenceLabel(rating) {
                     <p><strong>URL:</strong> <a href="<%= problem.url %>" target="_blank"><%= problem.url %></a></p>
                 <% } %>
                 <p><strong>Difficulty:</strong> <%= problem.problem_difficulty || 'N/A' %></p>
-                <p><strong>Topic:</strong> <%= problem.topic_name || 'N/A' %></p>
-                <p><strong>Platform:</strong> <%= problem.problem_platform || problem.platform || 'N/A' %></p>
                 <p><strong>Independence:</strong> <%= independenceLabel(problem.rating) %></p>
                 <p><strong>Time Taken:</strong> <%= formatTime(problem.time) %></p>
                 <p><strong>Status:</strong> <%= problem.status || 'LEARNING' %></p>
-                <p><strong>Solved On:</strong> <%= new Date(problem.created_at).toLocaleDateString() %></p>
 
-                <% if (problem.code) { %>
-                    <details>
-                        <summary>View Approach</summary>
-                        <pre><code><%= problem.code %></code></pre>
-                    </details>
-                <% } %>
+                <details class="hint-details">
+                    <summary>View Topic</summary>
+                    <div class="topic-reveal">
+                        <%= problem.topic_name || 'No topic mapped yet' %>
+                    </div>
+                </details>
+                <details class="hint-details">
+                    <summary>View Notes</summary>
+                    <div class="note-block">
+                        <% if (problem.code) { %>
+                            <p><strong>Problem approach/insights:</strong></p>
+                            <pre><code><%= problem.code %></code></pre>
+                        <% } %>
+                        <% if (problem.mistake_made) { %><p><strong>Mistake made:</strong> <%= problem.mistake_made %></p><% } %>
+                        <% if (problem.hardest_part) { %><p><strong>Hardest part:</strong> <%= problem.hardest_part %></p><% } %>
+                        <% if (problem.hint_1) { %><p><strong>Hint 1:</strong> <%= problem.hint_1 %></p><% } %>
+                        <% if (problem.hint_2) { %><p><strong>Hint 2:</strong> <%= problem.hint_2 %></p><% } %>
+                        <% if (problem.hint_3) { %><p><strong>Hint 3:</strong> <%= problem.hint_3 %></p><% } %>
+                        <% if (!hasNotes(problem)) { %><p>No notes added yet.</p><% } %>
+                    </div>
+                </details>
+                <div class="actions-row">
+                    <% if (problem.url) { %>
+                        <a href="/solve?url=<%= encodeURIComponent(problem.url) %>" class="btn btn-solve btn-sm">Resolve</a>
+                    <% } %>
+                </div>
             </div>
         <% }) %>
     </div>

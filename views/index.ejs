@@ -1,39 +1,156 @@
 <%- include('partials/header') %>
 
-<h1 style="text-align: center; margin-bottom: 1.5rem;">Welcome to Your Re_Wise Dashboard</h1>
+<%
+    const maxSolved = Math.max(1, ...weeklySolved.map((day) => day.count));
+    const maxTopicSolved = Math.max(1, ...topicSolved.map((topic) => topic.count));
+%>
 
-<div class="stats-container" style="display: flex; gap: 1.5rem; justify-content: center; margin-bottom: 2rem; flex-wrap: wrap;">
-    <div class="stat-card" style="background: var(--card-bg); border: 1px solid var(--border-color); padding: 1.25rem 2rem; border-radius: 12px; text-align: center; min-width: 160px; backdrop-filter: blur(10px); box-shadow: 0 4px 6px rgba(0,0,0,0.15);">
-        <h3 style="font-size: 2.2rem; color: var(--accent-success); margin-bottom: 0.25rem; font-family: 'Fira Code', monospace;"><%= todaySolved %></h3>
-        <p style="color: var(--text-muted); font-size: 0.9rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px;">Solved Today</p>
+<section class="dashboard-hero">
+    <div>
+        <span class="eyebrow">Command Center</span>
+        <h1>Happy coding, <%= username %>.</h1>
+        <p>Small reviews compound. Miss less, revisit smarter, solve steadily.</p>
     </div>
-    <div class="stat-card" style="background: var(--card-bg); border: 1px solid var(--border-color); padding: 1.25rem 2rem; border-radius: 12px; text-align: center; min-width: 160px; backdrop-filter: blur(10px); box-shadow: 0 4px 6px rgba(0,0,0,0.15);">
-        <h3 style="font-size: 2.2rem; color: var(--accent-primary); margin-bottom: 0.25rem; font-family: 'Fira Code', monospace;"><%= totalSolved %></h3>
-        <p style="color: var(--text-muted); font-size: 0.9rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px;">Total Solved</p>
-    </div>
-</div>
 
-<form action="/solve" method="GET" class="solve-url-panel">
-    <label for="dashboardProblemUrl">Start solving from URL</label>
-    <div class="solve-url-row">
-        <input
-            type="url"
-            id="dashboardProblemUrl"
-            name="url"
-            required
-            placeholder="Paste LeetCode / NeetCode / other problem URL..."
-        >
-        <button type="submit" class="btn btn-solve">Solve</button>
-    </div>
-</form>
+</section>
 
-<div class="dashboard-buttons">
-    <a href="/problems/easy" class="btn btn-success">Easy Problems</a>
-    <a href="/problems/medium" class="btn btn-warning">Medium Problems</a>
-    <a href="/problems/hard" class="btn btn-danger">Hard Problems</a>
-    <a href="/problems/due" class="btn btn-purple">All Due Problems</a>
-    <a href="/concepts/new" class="btn btn-turq">Add Concept</a> 
-    <a href="/concepts" class="btn btn-pink">Due Concepts</a>
-</div>
+<section class="dashboard-grid">
+    <div class="dashboard-main">
+        <form action="/solve" method="GET" class="solve-command-card">
+            <div>
+                <span class="eyebrow">Solve Command</span>
+                <h2>Paste a problem URL</h2>
+                <p>LeetCode and NeetCode problems resolve automatically(Others require extra metadata).</p>
+            </div>
+
+            <div class="solve-url-row">
+                <input
+                    type="url"
+                    id="dashboardProblemUrl"
+                    name="url"
+                    required
+                    placeholder="https://leetcode.com/problems/..."
+                >
+                <button type="submit" class="btn btn-solve">Solve</button>
+            </div>
+        </form>
+
+        <section class="metric-grid">
+            <article class="metric-card">
+                <span>Solved Today</span>
+                <strong><%= todaySolved %></strong>
+            </article>
+            <article class="metric-card">
+                <span>Total Solved</span>
+                <strong><%= totalSolved %></strong>
+            </article>
+            <article class="metric-card metric-card-revise">
+                <span>Due Problems</span>
+                <strong><%= dueProblems %></strong>
+            </article>
+            <article class="metric-card">
+                <span>Due Concepts</span>
+                <strong><%= dueConcepts %></strong>
+            </article>
+        </section>
+
+        <section class="dashboard-panel">
+            <div class="panel-heading">
+                <div>
+                    <span class="eyebrow">Daily Solves</span>
+                    <h2>Last 7 days</h2>
+                </div>
+            </div>
+
+            <div class="solve-chart" aria-label="Problems solved in the last seven days">
+                <% weeklySolved.forEach((day) => { %>
+                    <div class="chart-day">
+                        <div class="chart-track">
+                            <div class="chart-bar" data-height="<%= Math.max(8, Math.round((day.count / maxSolved) * 100)) %>"></div>
+                        </div>
+                        <strong><%= day.count %></strong>
+                        <span><%= day.label %></span>
+                    </div>
+                <% }) %>
+            </div>
+        </section>
+
+        <section class="dashboard-panel">
+            <div class="panel-heading">
+                <div>
+                    <span class="eyebrow">Topic Mix</span>
+                    <h2>Problems solved by topic</h2>
+                </div>
+            </div>
+
+            <% if (topicSolved.length === 0) { %>
+                <p class="dashboard-muted">Solve a few mapped problems and this chart will fill in.</p>
+            <% } else { %>
+                <div class="topic-bars">
+                    <% topicSolved.forEach((topic) => { %>
+                        <div class="topic-bar-row">
+                            <span><%= topic.topic_name %></span>
+                            <div class="topic-bar-track">
+                                <div class="topic-bar-fill" data-width="<%= Math.max(8, Math.round((topic.count / maxTopicSolved) * 100)) %>"></div>
+                            </div>
+                            <strong><%= topic.count %></strong>
+                        </div>
+                    <% }) %>
+                </div>
+            <% } %>
+        </section>
+    </div>
+
+    <aside class="dashboard-side">
+        <section class="side-card side-card-revise">
+            <div class="side-icon side-icon-revise" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                    <path d="M20 6v5h-5"></path>
+                    <path d="M4 18v-5h5"></path>
+                    <path d="M18.2 9A7 7 0 0 0 6.8 6.8L4 9.5"></path>
+                    <path d="M5.8 15A7 7 0 0 0 17.2 17.2L20 14.5"></path>
+                </svg>
+            </div>
+            <div>
+                <span class="eyebrow">Revise</span>
+                <h2>Today&apos;s queue</h2>
+                <p><%= dueProblems %> problem<%= dueProblems === 1 ? '' : 's' %> due for revision.</p>
+            </div>
+            <a href="/problems/due" class="btn btn-action-revision">Review Due</a>
+        </section>
+
+        <section class="side-card">
+            <span class="eyebrow">Social Circle</span>
+            <h2>Follow and learn</h2>
+            <p>Search users, manage followers, and compare approaches.</p>
+            <a href="/social" class="btn btn-secondary">Open Social Circle</a>
+        </section>
+
+        <section class="side-card">
+            <span class="eyebrow">Concepts</span>
+            <h2>Keep patterns sharp</h2>
+            <p><%= dueConcepts %> concept<%= dueConcepts === 1 ? '' : 's' %> waiting.</p>
+            <div class="side-actions">
+                <a href="/concepts" class="btn btn-secondary">Due Concepts</a>
+                <a href="/concepts/new" class="btn btn-secondary">Add Concept</a>
+            </div>
+        </section>
+
+        <section class="side-card quote-card">
+            <span class="eyebrow">Revision Rule</span>
+            <p>Do not wait until a problem feels forgotten. Review it while the path is still warm.</p>
+        </section>
+    </aside>
+</section>
+
+<script>
+    document.querySelectorAll('.chart-bar').forEach((bar) => {
+        bar.style.setProperty('--bar-height', `${bar.dataset.height}%`);
+    });
+
+    document.querySelectorAll('.topic-bar-fill').forEach((bar) => {
+        bar.style.setProperty('--topic-width', `${bar.dataset.width}%`);
+    });
+</script>
 
 <%- include('partials/footer') %>

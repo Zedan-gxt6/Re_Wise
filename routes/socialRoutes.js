@@ -4,7 +4,10 @@ import {
   addProblemCardComment,
   followUser,
   getCardComments,
+  getFollowers,
+  getFollowing,
   getPendingFollowRequests,
+  removeFollower,
   respondToFollowRequest,
   searchUsers,
   toggleProblemCardLike,
@@ -19,15 +22,52 @@ import {
 
 const router = express.Router();
 
+router.get("/social", requireAuth, async (req, res) => {
+  const tab = ["search", "followers", "following"].includes(req.query.tab)
+    ? req.query.tab
+    : "search";
+  const query = (req.query.q || "").trim();
+
+  try {
+    const [followers, following, users] = await Promise.all([
+      getFollowers(req.session.userId),
+      getFollowing(req.session.userId),
+      tab === "search" && query ? searchUsers(req.session.userId, query) : [],
+    ]);
+
+    res.render("social_circle.ejs", { tab, query, users, followers, following });
+  } catch (error) {
+    console.error("Social circle error:", error);
+    res.status(500).send("Error loading social circle");
+  }
+});
+
 router.get("/users/search", requireAuth, async (req, res) => {
   const query = (req.query.q || "").trim();
 
   try {
-    const users = query ? await searchUsers(req.session.userId, query) : [];
-    res.render("user_search.ejs", { users, query });
+    const [followers, following, users] = await Promise.all([
+      getFollowers(req.session.userId),
+      getFollowing(req.session.userId),
+      query ? searchUsers(req.session.userId, query) : [],
+    ]);
+    res.render("social_circle.ejs", { tab: "search", query, users, followers, following });
   } catch (error) {
     console.error("User search error:", error);
     res.status(500).send("Error searching users");
+  }
+});
+
+router.post("/followers/:id/remove", requireAuth, async (req, res) => {
+  const followerId = parseInt(req.params.id, 10);
+  if (!Number.isInteger(followerId)) return res.status(400).send("Invalid user id");
+
+  try {
+    await removeFollower(req.session.userId, followerId);
+    res.redirect(req.get("referer") || "/social?tab=followers");
+  } catch (error) {
+    console.error("Remove follower error:", error);
+    res.status(500).send("Error removing follower");
   }
 });
 
@@ -125,7 +165,10 @@ router.post("/problem-cards/:id/comments", requireAuth, async (req, res) => {
   try {
     const result = await addProblemCardComment(req.session.userId, cardId, req.body.comment);
     if (!result) return res.status(403).send("You cannot comment on this card");
-    await notifyProblemCardCommented(req.session.userId, cardId);
+    await notifyProblemCardCommented(req.session.userId, cardId, result.comment);
+    if (req.headers.accept?.includes("application/json")) {
+      return res.json(result);
+    }
     res.redirect(`/problem-cards/${cardId}/comments`);
   } catch (error) {
     console.error("Problem card comment add error:", error);

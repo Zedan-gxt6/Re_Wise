@@ -68,6 +68,49 @@ export async function unfollowUser(followerId, followingId) {
   );
 }
 
+export async function removeFollower(userId, followerId) {
+  await db.query(
+    "DELETE FROM follows WHERE follower_id = $1 AND following_id = $2",
+    [followerId, userId]
+  );
+}
+
+export async function getFollowers(userId) {
+  const result = await db.query(
+    `SELECT f.id AS follow_id,
+            u.id,
+            u.username,
+            u.bio,
+            u.profile_pic_url,
+            f.created_at
+     FROM follows f
+     JOIN users u ON u.id = f.follower_id
+     WHERE f.following_id = $1 AND f.status = 'accepted'
+     ORDER BY f.created_at DESC`,
+    [userId]
+  );
+
+  return result.rows;
+}
+
+export async function getFollowing(userId) {
+  const result = await db.query(
+    `SELECT f.id AS follow_id,
+            u.id,
+            u.username,
+            u.bio,
+            u.profile_pic_url,
+            f.created_at
+     FROM follows f
+     JOIN users u ON u.id = f.following_id
+     WHERE f.follower_id = $1 AND f.status = 'accepted'
+     ORDER BY f.created_at DESC`,
+    [userId]
+  );
+
+  return result.rows;
+}
+
 export async function getPendingFollowRequests(userId) {
   const result = await db.query(
     `SELECT f.id, f.created_at, u.id AS requester_id, u.username, u.bio, u.profile_pic_url
@@ -208,14 +251,12 @@ export async function addProblemCardComment(viewerId, cardId, comment) {
   const cleanComment = comment?.trim();
   if (!cleanComment) return null;
 
-  const result = await db.query(
-    `INSERT INTO problem_card_comments (problem_solved_id, user_id, comment)
-     VALUES ($1, $2, $3)
-     RETURNING id`,
-    [cardId, viewerId, cleanComment]
-  );
-
-  return result.rows[0];
+  return {
+    id: cardId,
+    problem_solved_id: cardId,
+    owner_id: card.user_id,
+    comment: cleanComment,
+  };
 }
 
 async function getVisibleProblemCard(viewerId, cardId) {

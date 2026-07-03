@@ -70,22 +70,69 @@ export async function insertAllProblem({ title, url, difficulty, topic, platform
 export async function saveSolvedProblem(req, problemLookup) {
   const { rating, time, code, action, ignore_time, mistake_made, hardest_part, hint_1, hint_2, hint_3 } = req.body;
   const problem = problemLookup.problem;
+  const chosenTopicId = parseInt(problemLookup.topicId || req.body.topic_override || req.body.topic || problem.topic, 10);
   const status = action === "mastered" ? "MASTERED" : "LEARNING";
   const visibility = req.body.visibility === "private" ? "private" : "public";
   const parsedTime = getTimeForScoring(problem, time, ignore_time);
-  const decayConstant = await getUserDecayConstant(req.session.userId, problem.topic);
+  const decayConstant = await getUserDecayConstant(req.session.userId, chosenTopicId);
   const baseStrength = calculateBaseStrength(problem.difficulty, rating, parsedTime);
   const currentThreshold = getInitialThreshold(problem.difficulty);
   const reviewDays = status === "MASTERED"
     ? 0
     : calculateReviewDays(baseStrength, currentThreshold, decayConstant);
 
+  const existing = await db.query(
+    `UPDATE problems_solved
+     SET rating = $1,
+         time = $2,
+         code = $3,
+         mistake_made = $4,
+         hardest_part = $5,
+         hint_1 = $6,
+         hint_2 = $7,
+         hint_3 = $8,
+         base_strength = $9,
+         current_threshold = $10,
+         last_rev_date = NOW(),
+         due_date = NOW() + INTERVAL '1 day' * ($11::INTEGER),
+         status = $12,
+         visibility = $13,
+         revisions_done = 0,
+         created_at = NOW(),
+         topic_id = $14
+     WHERE prob_id = $15
+       AND user_id = $16
+       AND platform = $17
+     RETURNING id, visibility`,
+    [
+      rating,
+      parsedTime,
+      code?.trim() || null,
+      mistake_made?.trim() || null,
+      hardest_part?.trim() || null,
+      hint_1?.trim() || null,
+      hint_2?.trim() || null,
+      hint_3?.trim() || null,
+      baseStrength,
+      currentThreshold,
+      reviewDays,
+      status,
+      visibility,
+      chosenTopicId,
+      problem.id,
+      req.session.userId,
+      problemLookup.platform,
+    ]
+  );
+
+  if (existing.rows.length > 0) return existing.rows[0];
+
   const result = await db.query(
     `INSERT INTO problems_solved
        (prob_id, rating, time, code, mistake_made, hardest_part, hint_1, hint_2, hint_3,
-        base_strength, current_threshold, last_rev_date, due_date, status, user_id, platform, visibility)
+        base_strength, current_threshold, last_rev_date, due_date, status, user_id, platform, visibility, topic_id)
      VALUES
-       ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW(), NOW() + INTERVAL '1 day' * ($12::INTEGER), $13, $14, $15, $16)
+       ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW(), NOW() + INTERVAL '1 day' * ($12::INTEGER), $13, $14, $15, $16, $17)
      RETURNING id, visibility`,
     [
       problem.id,
@@ -104,6 +151,7 @@ export async function saveSolvedProblem(req, problemLookup) {
       req.session.userId,
       problemLookup.platform,
       visibility,
+      chosenTopicId,
     ]
   );
 

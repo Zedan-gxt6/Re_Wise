@@ -5,10 +5,9 @@
         <span>Activity</span>
         <h1>Notifications</h1>
     </div>
-
     <% if (notifications.length > 0) { %>
-        <form action="/notifications/read-all" method="POST">
-            <button type="submit" class="btn btn-secondary">Mark all read</button>
+        <form action="/notifications/clear" method="POST">
+            <button type="submit" class="btn btn-secondary">Clear notifications</button>
         </form>
     <% } %>
 </section>
@@ -33,16 +32,17 @@
                 </div>
 
                 <div class="notification-actions">
-                    <form action="/notifications/<%= notification.id %>/read" method="POST">
-                        <button type="submit" class="btn <%= notification.type === 'followed_user_solved_problem' ? 'btn-solve' : 'btn-secondary' %> btn-sm">
-                            <%= notification.type === 'followed_user_solved_problem' ? 'Solve Now' : (notification.is_read ? 'Open' : 'Open & read') %>
-                        </button>
-                    </form>
-
-                    <% if (notification.type === 'followed_user_solved_problem' && !notification.is_read) { %>
-                        <form action="/notifications/<%= notification.id %>/later" method="POST">
-                            <button type="submit" class="btn btn-secondary btn-sm">Later</button>
+                    <% if (notification.type === 'follow_request') { %>
+                        <form action="/notifications/<%= notification.id %>/follow-response" method="POST">
+                            <button type="submit" name="action" value="accept" class="btn btn-mastered btn-sm">Accept</button>
                         </form>
+                        <form action="/notifications/<%= notification.id %>/follow-response" method="POST">
+                            <button type="submit" name="action" value="reject" class="btn btn-secondary btn-sm">Reject</button>
+                        </form>
+                    <% } else if (notification.type === 'followed_user_solved_problem' && notification.target_url) { %>
+                        <a href="<%= notification.target_url %>" class="btn <%= notification.type === 'followed_user_solved_problem' ? 'btn-solve' : 'btn-secondary' %> btn-sm">
+                            Solve Now
+                        </a>
                     <% } %>
                 </div>
             </article>

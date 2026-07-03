@@ -38,8 +38,8 @@
 
         <div class="social-card-grid">
             <% followedCards.forEach((card) => { %>
-                <article class="social-problem-card">
-                    <div class="social-card-header">
+                <details class="social-problem-card compact-social-card">
+                    <summary class="social-person-summary">
                         <div class="mini-avatar">
                             <% if (card.profile_pic_url) { %>
                                 <img src="<%= card.profile_pic_url %>" alt="<%= card.username %> profile photo">
@@ -49,46 +49,51 @@
                         </div>
                         <div>
                             <h3><%= card.username %></h3>
-                            <p>
-                                Took <%= Math.round((card.time || 0) / 60) %> min |
-                                Level <%= card.rating %>
-                            </p>
+                            <p>Solved this problem</p>
                         </div>
-                    </div>
+                    </summary>
 
-                    <% if (card.code) { %>
-                        <details class="hint-details" open>
-                            <summary>Approach</summary>
-                            <pre class="social-approach"><code><%= card.code %></code></pre>
-                        </details>
-                    <% } %>
+                    <div class="social-card-expanded">
+                        <div class="social-card-meta">
+                            <span>Took <%= Math.round((card.time || 0) / 60) %> min</span>
+                            <span>Level <%= card.rating %></span>
+                        </div>
 
-                    <% if (card.mistake_made || card.hardest_part || card.hint_1 || card.hint_2 || card.hint_3) { %>
                         <details class="hint-details">
-                            <summary>Extra notes</summary>
+                            <summary>View notes</summary>
                             <div class="note-block">
+                                <% if (card.code) { %>
+                                    <p><strong>Approach:</strong></p>
+                                    <pre class="social-approach"><code><%= card.code %></code></pre>
+                                <% } %>
                                 <% if (card.mistake_made) { %><p><strong>Mistake:</strong> <%= card.mistake_made %></p><% } %>
                                 <% if (card.hardest_part) { %><p><strong>Hardest part:</strong> <%= card.hardest_part %></p><% } %>
                                 <% if (card.hint_1) { %><p><strong>Hint 1:</strong> <%= card.hint_1 %></p><% } %>
                                 <% if (card.hint_2) { %><p><strong>Hint 2:</strong> <%= card.hint_2 %></p><% } %>
                                 <% if (card.hint_3) { %><p><strong>Hint 3:</strong> <%= card.hint_3 %></p><% } %>
+                                <% if (!card.code && !card.mistake_made && !card.hardest_part && !card.hint_1 && !card.hint_2 && !card.hint_3) { %>
+                                    <p>No notes shared for this card.</p>
+                                <% } %>
                             </div>
                         </details>
-                    <% } %>
 
-                    <div class="social-card-actions">
-                        <form action="/problem-cards/<%= card.id %>/like" method="POST" class="social-like-form">
-                            <button type="submit" class="btn btn-secondary btn-sm">
-                                <span class="like-label"><%= card.liked_by_me ? 'Liked' : 'Like' %></span>
-                                |
-                                <span class="like-count"><%= card.likes_count %></span>
+                        <div class="social-card-actions">
+                            <form action="/problem-cards/<%= card.id %>/like" method="POST" class="social-like-form">
+                                <button type="submit" class="btn btn-secondary btn-sm">
+                                    <span class="like-label"><%= card.liked_by_me ? 'Liked' : 'Like' %></span>
+                                </button>
+                            </form>
+                        </div>
+
+                        <form action="/problem-cards/<%= card.id %>/comments" method="POST" class="inline-comment-form">
+                            <input type="text" name="comment" placeholder="Add a quick comment..." required>
+                            <button type="submit" class="review-plus-button" aria-label="Post comment">
+                                <span>+</span>
                             </button>
                         </form>
-                        <a href="/problem-cards/<%= card.id %>/comments" class="btn btn-secondary btn-sm">
-                            Comments | <%= card.comments_count %>
-                        </a>
+                        <div class="inline-comment-feedback"></div>
                     </div>
-                </article>
+                </details>
             <% }) %>
         </div>
     </section>
@@ -527,7 +532,6 @@
 
             const button = likeForm.querySelector('button');
             const label = likeForm.querySelector('.like-label');
-            const count = likeForm.querySelector('.like-count');
 
             button.disabled = true;
 
@@ -541,9 +545,41 @@
 
                 const data = await response.json();
                 label.textContent = data.liked ? 'Liked' : 'Like';
-                count.textContent = data.likesCount;
             } catch {
                 likeForm.submit();
+            } finally {
+                button.disabled = false;
+            }
+        });
+    });
+
+    document.querySelectorAll('.inline-comment-form').forEach((commentForm) => {
+        commentForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+
+            const input = commentForm.querySelector('input[name="comment"]');
+            const button = commentForm.querySelector('button');
+            const card = commentForm.closest('.social-problem-card');
+            const feedback = card.querySelector('.inline-comment-feedback');
+
+            button.disabled = true;
+
+            try {
+                const response = await fetch(commentForm.action, {
+                    method: 'POST',
+                    headers: {
+                        Accept: 'application/json',
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: new URLSearchParams(new FormData(commentForm))
+                });
+
+                if (!response.ok) throw new Error('Comment failed');
+
+                input.value = '';
+                feedback.textContent = 'Comment posted';
+            } catch {
+                feedback.textContent = 'Could not post comment. Try again.';
             } finally {
                 button.disabled = false;
             }
