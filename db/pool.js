@@ -3,12 +3,17 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-export const db = new pg.Pool({
-  user: "postgres",
-  host: "localhost",
-  database: "dsa_tracker",
-  password: process.env.DB_PASSWORD,
-  port: 5432,
-});
+const connectionConfig = process.env.DATABASE_URL
+  ? {
+      connectionString: process.env.DATABASE_URL,
+      ssl: { rejectUnauthorized: false },
+    }
+  : {
+      user: "postgres",
+      host: "localhost",
+      database: "dsa_tracker",
+      password: process.env.DB_PASSWORD,
+      port: 5432,
+    };
 
-db.connect();
+export const db = new pg.Pool(connectionConfig);

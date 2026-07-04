@@ -9,18 +9,24 @@ dotenv.config();
 
 const { Client } = pg;
 
-const client = new Client({
-  user: 'postgres',
-  host: 'localhost',
-  database: 'dsa_tracker',
-  password: process.env.DB_PASSWORD,
-  port: 5432,
-});
+const connectionConfig = process.env.DATABASE_URL
+  ? {
+      connectionString: process.env.DATABASE_URL,
+      ssl: { rejectUnauthorized: false },
+    }
+  : {
+      user: 'postgres',
+      host: 'localhost',
+      database: 'dsa_tracker',
+      password: process.env.DB_PASSWORD,
+      port: 5432,
+    };
+
+const client = new Client(connectionConfig);
 
 async function setup() {
   try {
     await client.connect();
-    // Create users table
     await client.query(`
       CREATE TABLE IF NOT EXISTS users (
         id SERIAL PRIMARY KEY,
@@ -31,43 +37,115 @@ async function setup() {
         bio TEXT,
         profile_pic_url TEXT,
         is_public BOOLEAN DEFAULT true,
+        revision_load NUMERIC DEFAULT 4,
+        concept_revision_load NUMERIC DEFAULT 5,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
-    // Create topics table
+
     await client.query(`
       CREATE TABLE IF NOT EXISTS topics (
-        slno SERIAL PRIMARY KEY,
-        name VARCHAR(100) NOT NULL UNIQUE
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(100) NOT NULL UNIQUE,
+        decay_constant NUMERIC DEFAULT 0.03
       );
     `);
-    // Create all_problems table
+
     await client.query(`
       CREATE TABLE IF NOT EXISTS all_problems (
         id SERIAL PRIMARY KEY,
-        problem_title VARCHAR(255) UNIQUE NOT NULL,
+        title VARCHAR(255) NOT NULL,
+        url TEXT,
+        difficulty VARCHAR(50),
+        topic INTEGER REFERENCES topics(id),
         platform VARCHAR(100),
-        problem_url TEXT,
-        problem_difficulty VARCHAR(50),
-        topic INTEGER REFERENCES topics(slno)
+        UNIQUE(platform, url)
       );
     `);
-    // Create problems_solved table
+
     await client.query(`
       CREATE TABLE IF NOT EXISTS problems_solved (
         id SERIAL PRIMARY KEY,
-        title INTEGER REFERENCES all_problems(id) ON DELETE SET NULL,
-        url TEXT,
+        prob_id INTEGER REFERENCES all_problems(id) ON DELETE SET NULL,
+        platform VARCHAR(100),
         rating INTEGER,
         time INTEGER,
         code TEXT,
-        pattern INTEGER,
+        mistake_made TEXT,
+        hardest_part TEXT,
+        hint_1 TEXT,
+        hint_2 TEXT,
+        hint_3 TEXT,
+        base_strength NUMERIC,
+        current_threshold NUMERIC,
+        last_rev_date TIMESTAMP,
         review_days INTEGER,
+        revisions_done INTEGER DEFAULT 0,
         due_date TIMESTAMP,
         status VARCHAR(20),
         visibility VARCHAR(20) DEFAULT 'public',
+        topic_id INTEGER REFERENCES topics(id),
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        user_id INTEGER REFERENCES users(id) ON DELETE SET NULL
+        user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+        UNIQUE(user_id, platform, prob_id)
+      );
+    `);
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS user_constants (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        topic_id INTEGER NOT NULL REFERENCES topics(id) ON DELETE CASCADE,
+        decay_constant NUMERIC NOT NULL DEFAULT 0.03,
+        UNIQUE(user_id, topic_id)
+      );
+    `);
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS revision_daily_plans (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        plan_date DATE NOT NULL,
+        problem_solved_id INTEGER NOT NULL REFERENCES problems_solved(id) ON DELETE CASCADE,
+        completed_at TIMESTAMP,
+        load_adjusted BOOLEAN DEFAULT FALSE,
+        UNIQUE(user_id, plan_date, problem_solved_id)
+      );
+    `);
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS concept_books (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        name VARCHAR(150) NOT NULL,
+        UNIQUE(user_id, name)
+      );
+    `);
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS concepts (
+        id SERIAL PRIMARY KEY,
+        title VARCHAR(255) NOT NULL,
+        concept TEXT NOT NULL,
+        userid INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        due_date TIMESTAMP,
+        review_days INTEGER,
+        book_id INTEGER REFERENCES concept_books(id) ON DELETE SET NULL,
+        priority INTEGER DEFAULT 3,
+        status VARCHAR(20) DEFAULT 'LEARNING',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS concept_daily_plans (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        plan_date DATE NOT NULL,
+        concept_id INTEGER NOT NULL REFERENCES concepts(id) ON DELETE CASCADE,
+        completed_at TIMESTAMP,
+        load_adjusted BOOLEAN DEFAULT FALSE,
+        UNIQUE(user_id, plan_date, concept_id)
       );
     `);
     await client.query(`

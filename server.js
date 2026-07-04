@@ -18,7 +18,11 @@ import { getUnreadNotificationCount } from "./services/notificationService.js";
 dotenv.config();
 
 const app = express();
-const port = 3000;
+const port = process.env.PORT || 3000;
+
+if (process.env.NODE_ENV === "production") {
+  app.set("trust proxy", 1);
+}
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "YOUR_GEMINI_API_KEY");
 genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
@@ -34,7 +38,11 @@ app.use(session({
   resave: false,
   saveUninitialized: false,
   rolling: true,
-  cookie: { maxAge: 1000 * 60 * 60 * 24 * 7 },
+  cookie: {
+    maxAge: 1000 * 60 * 60 * 24 * 7,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+  },
 }));
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.json());
