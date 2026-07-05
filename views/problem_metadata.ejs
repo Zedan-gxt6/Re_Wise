@@ -78,4 +78,15 @@
     </div>
 </form>
 
+<script>
+    const metadataForm = document.querySelector('.metadata-form');
+
+    metadataForm.addEventListener('keydown', (event) => {
+        if (event.key !== 'Enter') return;
+        if (event.target.tagName === 'TEXTAREA') return;
+
+        event.preventDefault();
+    });
+</script>
+
 <%- include('partials/footer') %>

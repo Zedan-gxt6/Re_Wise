@@ -1,9 +1,40 @@
 <%- include('partials/header') %>
 
 <h1>Edit Profile</h1>
-<p>Keep this simple for now. Phase 2 will add followers and requests.</p>
+<p>Your username is public. Password fields are optional and only needed when you want to set or change local login.</p>
+
+<% if (locals.error) { %>
+    <div class="auth-warning"><%= error %></div>
+<% } %>
 
 <form action="/profile/update" method="POST" class="profile-edit-form">
+    <section class="solve-meta-card">
+        <div class="form-group">
+            <label for="username">Public username</label>
+            <input
+                type="text"
+                id="username"
+                name="username"
+                value="<%= user.username || '' %>"
+                minlength="3"
+                maxlength="50"
+                required
+            >
+            <small>This is how people find and recognize you. You can change it, but it must be unique.</small>
+        </div>
+
+        <div class="form-group">
+            <label>Login methods</label>
+            <p class="profile-login-note">
+                <% if (user.has_google_login) { %>Google login enabled.<% } else { %>Google login not linked yet.<% } %>
+                <% if (user.has_password_login) { %> Username/password login enabled.<% } else { %> No local password set yet.<% } %>
+            </p>
+            <% if (user.email) { %>
+                <small>Linked email: <%= user.email %></small>
+            <% } %>
+        </div>
+    </section>
+
     <div class="form-group">
         <label for="bio">Bio</label>
         <textarea id="bio" name="bio" rows="5" placeholder="Tell people what you are preparing for..."><%= user.bio || '' %></textarea>
@@ -27,6 +58,51 @@
             <option value="private" <%= !user.is_public ? 'selected' : '' %>>Private</option>
         </select>
     </div>
+
+    <section class="solve-meta-card">
+        <div class="form-group">
+            <label for="current_password">Current password</label>
+            <input
+                type="password"
+                id="current_password"
+                name="current_password"
+                autocomplete="current-password"
+                placeholder="<%= user.has_password_login ? 'Required only when changing password' : 'Not needed for first password' %>"
+            >
+            <small>
+                <% if (user.has_password_login) { %>
+                    For safety, enter your current Re_Wise password if you want to change it.
+                <% } else { %>
+                    Google-only account: leave this blank and set a new password below if you want username/password login too.
+                <% } %>
+            </small>
+        </div>
+
+        <div class="form-group">
+            <label for="new_password">New local password</label>
+            <input
+                type="password"
+                id="new_password"
+                name="new_password"
+                autocomplete="new-password"
+                minlength="6"
+                placeholder="Leave blank to keep current login"
+            >
+            <small>This is a Re_Wise password, not your Google password.</small>
+        </div>
+
+        <div class="form-group">
+            <label for="confirm_password">Confirm new password</label>
+            <input
+                type="password"
+                id="confirm_password"
+                name="confirm_password"
+                autocomplete="new-password"
+                minlength="6"
+                placeholder="Repeat new password"
+            >
+        </div>
+    </section>
 
     <button type="submit" class="btn btn-primary">Save Profile</button>
 </form>

@@ -30,7 +30,21 @@ router.post("/profile/update", requireAuth, async (req, res) => {
     res.redirect("/profile/me");
   } catch (error) {
     console.error("Profile update error:", error);
-    res.status(500).send("Error updating profile");
+    const user = await getProfileUser(req.session.userId);
+    const message = error.code === "23505"
+      ? "That username is already taken."
+      : error.code === "PROFILE_VALIDATION"
+        ? error.message
+        : "Error updating profile";
+
+    const formUser = {
+      ...user,
+      ...req.body,
+      is_public: req.body.is_public === "private" ? false : true,
+    };
+
+    res.status(error.code === "23505" || error.code === "PROFILE_VALIDATION" ? 400 : 500)
+      .render("edit_profile.ejs", { user: formUser, error: message });
   }
 });
 

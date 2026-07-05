@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DSA Spaced Repetition</title>
+    <link rel="icon" type="image/svg+xml" href="/rewise-logo.svg">
     <!-- We link our CSS file from the public folder -->
     <link rel="stylesheet" href="/styles.css">
 </head>
@@ -18,8 +19,7 @@
             </a>
 
             <div class="nav-actions">
-                <a href="/problems/filter">All Problems</a>
-                <a href="/concepts/all">All Concepts</a>
+                <a href="/feedback">Feedback / Report bug</a>
                 <a href="/profile/me">Profile</a>
                 <a href="/notifications" class="notification-nav-link" aria-label="Notifications">
                     <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -27,7 +27,7 @@
                         <path d="M9.5 20a2.5 2.5 0 0 0 5 0"></path>
                     </svg>
                     <% if (locals.unreadNotifications > 0) { %>
-                        <span><%= locals.unreadNotifications %></span>
+                        <span class="notification-badge"><%= locals.unreadNotifications > 99 ? '99+' : locals.unreadNotifications %></span>
                     <% } %>
                 </a>
                 <form action="/logout" method="POST" class="logout-form">

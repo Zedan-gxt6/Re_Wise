@@ -35,6 +35,14 @@ import { notifyFollowersProblemSolved } from "../services/notificationService.js
 
 const router = express.Router();
 
+function notifyFollowersProblemSolvedSoon(userId, problemSolvedId) {
+  setImmediate(() => {
+    notifyFollowersProblemSolved(userId, problemSolvedId).catch((error) => {
+      console.error("Follower solve notification error:", error);
+    });
+  });
+}
+
 async function renderManualProblemMetadata(req, res, reason, metadata = {}) {
   const topics = await getTopics();
   const extracted = extractProblemSlug(req.body.url);
@@ -174,6 +182,32 @@ async function applyTopicOverride(req) {
 }
 
 async function attachProblemFromUrl(req, res, next) {
+  const submittedProblemId = parseInt(req.body.problem_id, 10);
+  const submittedPlatform = normalizePlatform(req.body.platform);
+
+  if (Number.isInteger(submittedProblemId) && submittedPlatform) {
+    try {
+      const result = await db.query(
+        `SELECT id, title, url, difficulty, topic, platform
+         FROM all_problems
+         WHERE id = $1 AND platform = $2
+         LIMIT 1`,
+        [submittedProblemId, submittedPlatform]
+      );
+
+      if (result.rows.length > 0) {
+        req.problemLookup = {
+          platform: submittedPlatform,
+          slug: req.body.slug || extractProblemSlug(req.body.url)?.slug || "",
+          problem: result.rows[0],
+        };
+        return next();
+      }
+    } catch (error) {
+      console.error("Submitted problem lookup error:", error);
+    }
+  }
+
   const extracted = extractProblemSlug(req.body.url);
   if (!extracted) {
     return renderManualProblemMetadata(
@@ -262,6 +296,7 @@ router.get("/solve", requireAuth, async (req, res) => {
           url,
           platform: result.platform,
           slug: result.slug,
+          problemId: result.problem.id,
           title: result.problem.title,
           difficulty: normalizeDifficulty(result.problem.difficulty),
           topic: result.problem.topic,
@@ -308,6 +343,7 @@ router.get("/problems/filter", requireAuth, async (req, res) => {
     difficulty: req.query.difficulty || "",
     status: req.query.status || "",
     platform: req.query.platform || "",
+    title: String(req.query.title || "").trim(),
   };
   const where = ["ps.user_id = $1"];
   const values = [req.session.userId];
@@ -331,6 +367,10 @@ router.get("/problems/filter", requireAuth, async (req, res) => {
   if (filters.platform) {
     values.push(filters.platform);
     where.push(`ps.platform = $${values.length}`);
+  }
+  if (filters.title) {
+    values.push(`%${filters.title}%`);
+    where.push(`ap.title ILIKE $${values.length}`);
   }
   if (filters.time_range === "below_15") where.push("COALESCE(ps.time, 0) < 15 * 60");
   else if (filters.time_range === "15_30") where.push("COALESCE(ps.time, 0) >= 15 * 60 AND COALESCE(ps.time, 0) <= 30 * 60");
@@ -362,8 +402,8 @@ router.post("/add", requireAuth, validateProblemSolveInput, attachProblemFromUrl
   try {
     await applyTopicOverride(req);
     const solvedProblem = await saveSolvedProblem(req, req.problemLookup);
-    await notifyFollowersProblemSolved(req.session.userId, solvedProblem.id);
-    res.redirect("/");
+    notifyFollowersProblemSolvedSoon(req.session.userId, solvedProblem.id);
+    res.redirect("/dashboard");
   } catch (error) {
     console.error("Error inserting data:", error);
     res.status(500).send("Error adding problem");
@@ -396,8 +436,8 @@ router.post("/add/manual", requireAuth, async (req, res) => {
     }
 
     const solvedProblem = await saveSolvedProblem(req, { platform: normalizedPlatform, slug: problemSlug, problem });
-    await notifyFollowersProblemSolved(req.session.userId, solvedProblem.id);
-    res.redirect("/");
+    notifyFollowersProblemSolvedSoon(req.session.userId, solvedProblem.id);
+    res.redirect("/dashboard");
   } catch (error) {
     console.error("Manual problem add error:", error);
     res.status(500).send("Error adding manual problem metadata");
@@ -517,7 +557,11 @@ router.post("/problems/:difficulty/:id/update-info", requireAuth, async (req, re
 
     if (result.rowCount === 0) return res.status(404).send("Problem not found");
 
-    res.redirect(`/problems/${req.params.difficulty}`);
+    const returnPath = req.params.difficulty === "filter"
+      ? "/problems/filter"
+      : `/problems/${req.params.difficulty}`;
+
+    res.redirect(returnPath);
   } catch (err) {
     console.error("Update problem info error:", err);
     res.status(500).send("Error updating problem info");

@@ -1,0 +1,30 @@
+<%- include('partials/header') %>
+
+<h1>Feedback / Report bug</h1>
+<p>Share anything confusing, broken, slow, or useful to improve.</p>
+
+<% if (submitted) { %>
+    <div class="success-message">Thanks. Your feedback was saved.</div>
+<% } %>
+
+<% if (error) { %>
+    <div class="auth-warning"><%= error %></div>
+<% } %>
+
+<form action="/feedback" method="POST" class="profile-edit-form">
+    <div class="form-group">
+        <label for="message">Feedback</label>
+        <textarea
+            id="message"
+            name="message"
+            rows="8"
+            required
+            minlength="5"
+            placeholder="Example: Scheduling felt slow after clicking the button..."
+        ></textarea>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Submit Feedback</button>
+</form>
+
+<%- include('partials/footer') %>

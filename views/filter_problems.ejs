@@ -32,6 +32,17 @@ function hasNotes(problem) {
 <form action="/problems/filter" method="GET" class="filter-panel">
     <div class="filter-grid">
         <div class="form-group">
+            <label for="title">Problem Title</label>
+            <input
+                type="search"
+                id="title"
+                name="title"
+                placeholder="Search by title..."
+                value="<%= filters.title || '' %>"
+            >
+        </div>
+
+        <div class="form-group">
             <label for="topic">Topic</label>
             <select id="topic" name="topic">
                 <option value="">All topics</option>
@@ -142,6 +153,7 @@ function hasNotes(problem) {
                     <% if (problem.url) { %>
                         <a href="/solve?url=<%= encodeURIComponent(problem.url) %>" class="btn btn-solve btn-sm">Resolve</a>
                     <% } %>
+                    <a href="/problems/filter/<%= problem.id %>/edit" class="btn btn-action-schedule btn-sm">Edit Info</a>
                 </div>
             </div>
         <% }) %>

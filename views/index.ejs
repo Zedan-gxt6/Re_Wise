@@ -91,7 +91,7 @@
                         <div class="topic-bar-row">
                             <span><%= topic.topic_name %></span>
                             <div class="topic-bar-track">
-                                <div class="topic-bar-fill" data-width="<%= Math.max(8, Math.round((topic.count / maxTopicSolved) * 100)) %>"></div>
+                                <div class="topic-bar-fill" data-width="<%= topic.count === 0 ? 0 : Math.max(8, Math.round((topic.count / maxTopicSolved) * 100)) %>"></div>
                             </div>
                             <strong><%= topic.count %></strong>
                         </div>
@@ -120,6 +120,13 @@
         </section>
 
         <section class="side-card">
+            <span class="eyebrow">Problem Bank</span>
+            <h2>All problems</h2>
+            <p>Browse your solved cards, filters, notes, hints, and saved approaches.</p>
+            <a href="/problems/filter" class="btn btn-secondary">All Problems</a>
+        </section>
+
+        <section class="side-card">
             <span class="eyebrow">Social Circle</span>
             <h2>Follow and learn</h2>
             <p>Search users, manage followers, and compare approaches.</p>
@@ -132,6 +139,7 @@
             <p><%= dueConcepts %> concept<%= dueConcepts === 1 ? '' : 's' %> waiting.</p>
             <div class="side-actions">
                 <a href="/concepts" class="btn btn-secondary">Due Concepts</a>
+                <a href="/concepts/all" class="btn btn-secondary">All Concepts</a>
                 <a href="/concepts/new" class="btn btn-secondary">Add Concept</a>
             </div>
         </section>

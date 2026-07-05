@@ -57,9 +57,6 @@ function hasNotes(problem) {
                     <% if (problem.rating === 3) { %> Major Hints Taken/Couldn't Solve <% } %>
                 </p>
                 <p><strong>Time Taken:</strong> <%= formatTime(problem.time) %></p>
-                <% if (problem.due_date) { %>
-                    <p><strong>Due Date:</strong> <%= new Date(problem.due_date).toLocaleDateString() %></p>
-                <% } %>
                 <% if (problem.problem_difficulty) { %>
                     <p><strong>Revisions:</strong> <%= problem.revisions_done || 0 %> / <%= maxRevisions(problem.problem_difficulty) %></p>
                 <% } %>
@@ -96,25 +93,29 @@ function hasNotes(problem) {
                     <% } %>
                     <a href="/problems/<%= difficulty %>/<%= problem.id %>/edit" class="btn btn-action-schedule btn-sm">Edit Info</a>
                     <% if (difficulty === 'due') { %>
-                        <form action="/problems/<%= difficulty %>/<%= problem.id %>/master" method="POST">
+                        <form action="/problems/<%= difficulty %>/<%= problem.id %>/master" method="POST" class="inline-action-form">
                             <button type="submit" class="btn btn-action-fix btn-sm">Fix (Mastered)</button>
+                            <span class="inline-submit-status" aria-live="polite"></span>
                         </form>
-                        <form action="/problems/<%= difficulty %>/<%= problem.id %>/revise" method="POST">
+                        <form action="/problems/<%= difficulty %>/<%= problem.id %>/revise" method="POST" class="inline-action-form">
                             <select name="feedback" required>
                                 <option value="remembered">Fully Remembered</option>
                                 <option value="partial">Partially Forgot</option>
                                 <option value="forgot">Couldn't Recall Approach</option>
                             </select>
                             <button type="submit" class="btn btn-action-revision btn-sm">Schedule Again</button>
+                            <span class="inline-submit-status" aria-live="polite"></span>
                         </form>
                     <% } else { %>
                         <% if (problem.status !== 'MASTERED') { %>
-                            <form action="/problems/<%= difficulty %>/<%= problem.id %>/master" method="POST">
+                            <form action="/problems/<%= difficulty %>/<%= problem.id %>/master" method="POST" class="inline-action-form">
                                 <button type="submit" class="btn btn-action-fix btn-sm">Fix (Mastered)</button>
+                                <span class="inline-submit-status" aria-live="polite"></span>
                             </form>
                         <% } else { %>
-                            <form action="/problems/<%= difficulty %>/<%= problem.id %>/schedule" method="POST">
+                            <form action="/problems/<%= difficulty %>/<%= problem.id %>/schedule" method="POST" class="inline-action-form">
                                 <button type="submit" class="btn btn-action-schedule btn-sm">Schedule</button>
+                                <span class="inline-submit-status" aria-live="polite"></span>
                             </form>
                         <% } %>
                     <% } %>
@@ -123,5 +124,28 @@ function hasNotes(problem) {
         <% }) %>
     </div>
 <% } %>
+
+<script>
+    document.querySelectorAll('.inline-action-form').forEach((form) => {
+        form.addEventListener('submit', (event) => {
+            if (form.dataset.submitting === 'true') {
+                event.preventDefault();
+                return;
+            }
+
+            form.dataset.submitting = 'true';
+            const button = form.querySelector('button[type="submit"]');
+            const status = form.querySelector('.inline-submit-status');
+            const isScheduleAction = /schedule|revise/i.test(form.action) || /schedule/i.test(button?.textContent || '');
+
+            if (button) button.disabled = true;
+            if (status) {
+                status.textContent = isScheduleAction
+                    ? 'Please wait while this problem is scheduled...'
+                    : 'Please wait while this problem is updated...';
+            }
+        });
+    });
+</script>
 
 <%- include('partials/footer') %>

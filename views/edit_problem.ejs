@@ -64,7 +64,7 @@
 
     <div class="submit-actions">
         <button type="submit" class="btn btn-schedule">Save Changes</button>
-        <a href="/problems/<%= difficulty %>" class="btn btn-secondary">Cancel</a>
+        <a href="<%= difficulty === 'filter' ? '/problems/filter' : `/problems/${difficulty}` %>" class="btn btn-secondary">Cancel</a>
     </div>
 </form>
 </div>

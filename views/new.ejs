@@ -107,6 +107,11 @@
 
     <% if (isSolving) { %>
         <input type="hidden" id="url" name="url" value="<%= solve.url || '' %>">
+        <% if (isKnownSolve) { %>
+            <input type="hidden" name="problem_id" value="<%= solve.problemId || '' %>">
+            <input type="hidden" name="platform" value="<%= solve.platform || '' %>">
+            <input type="hidden" name="slug" value="<%= solve.slug || '' %>">
+        <% } %>
     <% } else { %>
        <div class="form-group">
             <label for="url">Problem URL:</label>
@@ -318,6 +323,8 @@
            Fix Problem <span>Mastered</span>
         </button>
     </div>
+    <input type="hidden" id="submitActionValue" value="">
+    <p class="submit-status" aria-live="polite" hidden></p>
 
 </form>
 
@@ -342,6 +349,9 @@
     const codeInput = document.getElementById('code');
     const ignoreTimeInput = document.getElementById('ignoreTime');
     const adjustButtons = document.querySelectorAll('[data-adjust]');
+    const submitButtons = document.querySelectorAll('.submit-actions button[type="submit"]');
+    const submitStatus = document.querySelector('.submit-status');
+    const submitActionValue = document.getElementById('submitActionValue');
     const metadataInputs = document.querySelectorAll(
         '#title, #platform, #difficulty, #topic, #topic_override'
     );
@@ -359,6 +369,17 @@
         ).padStart(2, '0');
 
         return `${minutes}:${secs}`;
+    }
+
+    function showSubmitStatus(actionValue) {
+        const message = actionValue === 'mastered'
+            ? 'Please wait while your problem is marked as mastered...'
+            : 'Please wait while your problem is scheduled...';
+
+        if (submitStatus) {
+            submitStatus.textContent = message;
+            submitStatus.hidden = false;
+        }
     }
 
     function updateTimer() {
@@ -489,6 +510,13 @@
         input.addEventListener('change', saveDraft);
     });
 
+    form.addEventListener('keydown', (event) => {
+        if (event.key !== 'Enter') return;
+        if (event.target.tagName === 'TEXTAREA') return;
+
+        event.preventDefault();
+    });
+
     restoreDraft();
     updateTimer();
 
@@ -498,11 +526,30 @@
             return;
         }
 
+        if (form.dataset.submitting === 'true') {
+            event.preventDefault();
+            return;
+        }
+
         event.preventDefault();
+        if (submitActionValue) {
+            submitActionValue.name = 'action';
+            submitActionValue.value = event.submitter?.value || 'schedule';
+        }
+        form.dataset.submitting = 'true';
+        showSubmitStatus(event.submitter?.value);
+        submitButtons.forEach((button) => {
+            button.disabled = true;
+        });
 
         if (!ignoreTimeInput.checked && parseInt(timeTakenInput.value, 10) <= 0) {
             alert('Please start the timer and record time before adding the problem.');
             saveDraft();
+            form.dataset.submitting = 'false';
+            if (submitStatus) submitStatus.hidden = true;
+            submitButtons.forEach((button) => {
+                button.disabled = false;
+            });
             return;
         }
 
@@ -520,9 +567,14 @@
             }
 
             sessionChecked = true;
-            form.requestSubmit(event.submitter);
+            form.requestSubmit();
         } catch {
             alert('Could not verify your login. Your draft is saved, please try again.');
+            form.dataset.submitting = 'false';
+            if (submitStatus) submitStatus.hidden = true;
+            submitButtons.forEach((button) => {
+                button.disabled = false;
+            });
         }
     });
 

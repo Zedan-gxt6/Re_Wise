@@ -6,8 +6,17 @@ import {
   getTimeForScoring,
   normalizeDifficulty,
 } from "../utils/problemUtils.js";
+import {
+  getAllTopicsFromCache,
+  getProblemByUrlFromCache,
+  getTopicFromCache,
+  isReferenceCacheReady,
+  setProblemInCache,
+} from "./cacheService.js";
 
 export async function getTopics() {
+  if (isReferenceCacheReady()) return getAllTopicsFromCache();
+
   const result = await db.query("SELECT id, name FROM topics ORDER BY id");
   return result.rows;
 }
@@ -20,8 +29,13 @@ export async function getUserDecayConstant(userId, topicId) {
 
   if (result.rows.length > 0) return parseFloat(result.rows[0].decay_constant);
 
-  const fallback = await db.query("SELECT decay_constant FROM topics WHERE id = $1", [topicId]);
-  const decayConstant = parseFloat(fallback.rows[0]?.decay_constant || 0.03);
+  const cachedTopic = isReferenceCacheReady() ? getTopicFromCache(topicId) : null;
+  let decayConstant = parseFloat(cachedTopic?.decay_constant || 0.03);
+
+  if (!cachedTopic) {
+    const fallback = await db.query("SELECT decay_constant FROM topics WHERE id = $1", [topicId]);
+    decayConstant = parseFloat(fallback.rows[0]?.decay_constant || 0.03);
+  }
 
   await db.query(
     `INSERT INTO user_constants (user_id, topic_id, decay_constant) VALUES ($1, $2, $3)`,
@@ -44,6 +58,11 @@ export async function seedUserConstants(userId) {
 }
 
 export async function findProblemInAllProblems(platform, slug, url) {
+  if (isReferenceCacheReady()) {
+    const cachedProblem = getProblemByUrlFromCache(platform, slug) || getProblemByUrlFromCache(platform, url);
+    if (cachedProblem) return cachedProblem;
+  }
+
   const result = await db.query(
     `SELECT id, title, url, difficulty, topic, platform
      FROM all_problems
@@ -64,7 +83,10 @@ export async function insertAllProblem({ title, url, difficulty, topic, platform
     [title, url, difficulty, topic, platform]
   );
 
-  return result.rows[0];
+  const problem = result.rows[0];
+  setProblemInCache(problem);
+
+  return problem;
 }
 
 export async function saveSolvedProblem(req, problemLookup) {

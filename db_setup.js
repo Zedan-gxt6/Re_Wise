@@ -31,7 +31,11 @@ async function setup() {
       CREATE TABLE IF NOT EXISTS users (
         id SERIAL PRIMARY KEY,
         username VARCHAR(50) UNIQUE NOT NULL,
-        password_hashed VARCHAR(255) NOT NULL,
+        password_hashed VARCHAR(255),
+        google_id TEXT,
+        email TEXT,
+        email_verified BOOLEAN DEFAULT false,
+        auth_provider VARCHAR(30) DEFAULT 'local',
         "prepDuration" INTEGER,
         skill_level VARCHAR(50),
         bio TEXT,
@@ -41,6 +45,18 @@ async function setup() {
         concept_revision_load NUMERIC DEFAULT 5,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
+    `);
+
+    await client.query(`
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_users_google_id_unique
+        ON users (google_id)
+        WHERE google_id IS NOT NULL;
+    `);
+
+    await client.query(`
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_users_email_lower_unique
+        ON users (LOWER(email))
+        WHERE email IS NOT NULL;
     `);
 
     await client.query(`

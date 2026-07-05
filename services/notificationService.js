@@ -149,7 +149,16 @@ export async function notifyFollowersProblemSolved(ownerId, problemSolvedId) {
      FROM follows f
      WHERE f.following_id = $1
        AND f.status = 'accepted'
-       AND f.follower_id != $1`,
+       AND f.follower_id != $1
+       AND NOT EXISTS (
+         SELECT 1
+         FROM notifications n
+         WHERE n.user_id = f.follower_id
+           AND n.actor_id = $1
+           AND n.type = 'followed_user_solved_problem'
+           AND n.entity_type = 'problem_card'
+           AND n.entity_id = $2
+       )`,
     [ownerId, problemSolvedId, message, targetUrl]
   );
 }
