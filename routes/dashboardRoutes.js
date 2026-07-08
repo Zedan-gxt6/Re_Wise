@@ -92,7 +92,15 @@ router.get("/dashboard", requireAuth, async (req, res) => {
       topicSolved: topicRes.rows,
     });
   } catch (err) {
-    console.error("Dashboard statistics query error:", err);
+    console.error("Dashboard statistics query error:", {
+      code: err.code,
+      message: err.message,
+      detail: err.detail,
+      table: err.table,
+      column: err.column,
+      constraint: err.constraint,
+      stack: err.stack,
+    });
     res.status(500).send("Error loading dashboard");
   }
 });

@@ -15,12 +15,16 @@ function pickFromBuckets(buckets, difficultyPattern, limit, lockedTopics = null)
       if (selected.length >= limit) break;
 
       const bucket = buckets[difficulty];
+      if (!bucket?.length) continue;
+
       const pickIndex = lockedTopics
         ? bucket.findIndex(problem => !problem.topic_id || !lockedTopics.has(problem.topic_id))
         : 0;
 
       if (pickIndex >= 0) {
         const [picked] = bucket.splice(pickIndex, 1);
+        if (!picked) continue;
+
         selected.push(picked);
         if (picked.topic_id) lockedTopics?.add(picked.topic_id);
         pickedInRound = true;
