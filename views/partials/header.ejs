@@ -19,6 +19,9 @@
             </a>
 
             <div class="nav-actions">
+                <% if (locals.isOwner) { %>
+                    <a href="/admin/stats">Website Stats</a>
+                <% } %>
                 <a href="/feedback">Feedback / Report bug</a>
                 <a href="/profile/me">Profile</a>
                 <a href="/notifications" class="notification-nav-link" aria-label="Notifications">

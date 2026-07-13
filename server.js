@@ -15,8 +15,11 @@ import notificationRoutes from "./routes/notificationRoutes.js";
 import profileRoutes from "./routes/profileRoutes.js";
 import googleAuthRoutes from "./routes/googleAuthRoutes.js";
 import feedbackRoutes from "./routes/feedbackRoutes.js";
+import adminRoutes from "./routes/adminRoutes.js";
 import { loadReferenceCache } from "./services/cacheService.js";
 import { getUnreadNotificationCount } from "./services/notificationService.js";
+import { logAppError } from "./services/adminService.js";
+import { attachOwnerFlag } from "./middleware/requireOwner.js";
 
 dotenv.config();
 
@@ -76,6 +79,7 @@ app.use(async (req, res, next) => {
 
   next();
 });
+app.use(attachOwnerFlag);
 
 app.use(authRoutes);
 app.use(googleAuthRoutes);
@@ -86,6 +90,55 @@ app.use(socialRoutes);
 app.use(notificationRoutes);
 app.use(profileRoutes);
 app.use(feedbackRoutes);
+app.use(adminRoutes);
+
+app.use((req, res) => {
+  res.status(404).render("error.ejs", {
+    title: "Page not found",
+    message: "This page does not exist.",
+    errorLog: null,
+    details: {
+      method: req.method,
+      route: req.originalUrl,
+      message: "No route matched this request.",
+      stack: null,
+    },
+  });
+});
+
+app.use(async (err, req, res, next) => {
+  console.error("Unhandled route error:", err);
+
+  let errorLog = null;
+  try {
+    errorLog = await logAppError(err, req);
+  } catch (logError) {
+    console.error("Failed to write app error log:", logError);
+  }
+
+  if (res.headersSent) return next(err);
+
+  res.status(500).render("error.ejs", {
+    title: "Request failed",
+    message: "This action failed, but the rest of the website is still running.",
+    errorLog,
+    details: {
+      method: req.method,
+      route: req.originalUrl,
+      message: err?.message || "Unknown server error",
+      stack: err?.stack || null,
+    },
+  });
+});
+
+process.on("unhandledRejection", (reason) => {
+  console.error("Unhandled promise rejection:", reason);
+});
+
+process.on("uncaughtException", (error) => {
+  console.error("Uncaught exception:", error);
+  process.exit(1);
+});
 
 async function startServer() {
   try {

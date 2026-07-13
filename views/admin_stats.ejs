@@ -1,0 +1,116 @@
+<%- include('partials/header') %>
+
+<section class="social-page-header">
+    <div>
+        <span>Owner Console</span>
+        <h1>Website Stats</h1>
+    </div>
+    <strong class="owner-stat-pill"><%= userCount %> registered users</strong>
+</section>
+
+<% if (notice) { %>
+    <div class="success-message"><%= notice %></div>
+<% } %>
+
+<% if (error) { %>
+    <div class="auth-warning"><%= error %></div>
+<% } %>
+
+<section class="admin-grid">
+    <article class="dashboard-panel">
+        <div class="panel-heading">
+            <div>
+                <span class="eyebrow">Global Notification</span>
+                <h2>Send update to all users</h2>
+            </div>
+        </div>
+        <form action="/admin/notify" method="POST" class="admin-notify-form">
+            <textarea
+                name="message"
+                rows="4"
+                required
+                placeholder="Example: Has resolved the revision queue issue and added safer error logging."
+            ></textarea>
+            <button type="submit" class="btn btn-solve">Send Notification</button>
+        </form>
+    </article>
+
+    <article class="dashboard-panel">
+        <div class="panel-heading">
+            <div>
+                <span class="eyebrow">Feedback</span>
+                <h2>All feedback reports</h2>
+            </div>
+        </div>
+
+        <% if (feedbacks.length === 0) { %>
+            <p class="dashboard-muted">No feedback yet.</p>
+        <% } else { %>
+            <div class="admin-list">
+                <% feedbacks.forEach((feedback) => { %>
+                    <article class="admin-item <%= feedback.status === 'resolved' ? 'admin-item-resolved' : '' %>">
+                        <div>
+                            <strong>#<%= feedback.id %> · <%= feedback.username || 'Unknown user' %></strong>
+                            <small><%= new Date(feedback.created_at).toLocaleString() %> · <%= feedback.status || 'new' %></small>
+                            <p><%= feedback.message %></p>
+                        </div>
+                        <% if (feedback.status !== 'resolved') { %>
+                            <form action="/admin/feedback/<%= feedback.id %>/resolve" method="POST">
+                                <button type="submit" class="btn btn-secondary btn-sm">Resolve</button>
+                            </form>
+                        <% } %>
+                    </article>
+                <% }) %>
+            </div>
+        <% } %>
+    </article>
+
+    <article class="dashboard-panel admin-wide-panel">
+        <div class="panel-heading">
+            <div>
+                <span class="eyebrow">Errors</span>
+                <h2>Logged app failures</h2>
+            </div>
+        </div>
+
+        <% if (errors.length === 0) { %>
+            <p class="dashboard-muted">No logged errors yet.</p>
+        <% } else { %>
+            <div class="admin-list">
+                <% errors.forEach((appError) => { %>
+                    <article class="admin-item <%= appError.status === 'resolved' ? 'admin-item-resolved' : '' %>">
+                        <div>
+                            <strong>#<%= appError.id %> · <%= appError.method || 'N/A' %> <%= appError.route || 'unknown route' %></strong>
+                            <small>
+                                <%= new Date(appError.created_at).toLocaleString() %>
+                                · user: <%= appError.username || appError.user_id || 'guest' %>
+                                · <%= appError.status || 'new' %>
+                            </small>
+                            <p><%= appError.message %></p>
+                            <details class="hint-details">
+                                <summary>View exact error</summary>
+                                <div class="note-block">
+                                    <% if (appError.details) { %>
+                                        <p><strong>Details:</strong></p>
+                                        <pre><code><%= JSON.stringify(appError.details, null, 2) %></code></pre>
+                                    <% } %>
+                                    <% if (appError.stack) { %>
+                                        <p><strong>Stack:</strong></p>
+                                        <pre><code><%= appError.stack %></code></pre>
+                                    <% } %>
+                                </div>
+                            </details>
+                        </div>
+                        <% if (appError.status !== 'resolved') { %>
+                            <form action="/admin/errors/<%= appError.id %>/resolve" method="POST">
+                                <button type="submit" class="btn btn-secondary btn-sm">Resolve</button>
+                            </form>
+                        <% } %>
+                    </article>
+                <% }) %>
+            </div>
+        <% } %>
+    </article>
+</section>
+
+<%- include('partials/footer') %>

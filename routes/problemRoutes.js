@@ -32,6 +32,10 @@ import {
 } from "../services/schedulerService.js";
 import { getFollowedProblemCards } from "../services/socialService.js";
 import { notifyFollowersProblemSolved } from "../services/notificationService.js";
+import {
+  updateDashboardCacheForSolvedProblem,
+  updateDashboardDueProblems,
+} from "../services/dashboardCacheService.js";
 
 const router = express.Router();
 
@@ -41,6 +45,11 @@ function notifyFollowersProblemSolvedSoon(userId, problemSolvedId) {
       console.error("Follower solve notification error:", error);
     });
   });
+}
+
+function wasDueProblem(problem) {
+  if (!problem?.due_date || problem.status === "MASTERED") return false;
+  return new Date(problem.due_date).getTime() <= Date.now();
 }
 
 async function renderManualProblemMetadata(req, res, reason, metadata = {}) {
@@ -402,6 +411,7 @@ router.post("/add", requireAuth, validateProblemSolveInput, attachProblemFromUrl
   try {
     await applyTopicOverride(req);
     const solvedProblem = await saveSolvedProblem(req, req.problemLookup);
+    updateDashboardCacheForSolvedProblem(req.session.userId, solvedProblem.dashboardCacheEvent);
     notifyFollowersProblemSolvedSoon(req.session.userId, solvedProblem.id);
     res.redirect("/dashboard");
   } catch (error) {
@@ -436,6 +446,7 @@ router.post("/add/manual", requireAuth, async (req, res) => {
     }
 
     const solvedProblem = await saveSolvedProblem(req, { platform: normalizedPlatform, slug: problemSlug, problem });
+    updateDashboardCacheForSolvedProblem(req.session.userId, solvedProblem.dashboardCacheEvent);
     notifyFollowersProblemSolvedSoon(req.session.userId, solvedProblem.id);
     res.redirect("/dashboard");
   } catch (error) {
@@ -570,11 +581,16 @@ router.post("/problems/:difficulty/:id/update-info", requireAuth, async (req, re
 
 router.post("/problems/:difficulty/:id/master", requireAuth, async (req, res) => {
   try {
+    const previous = await db.query(
+      "SELECT status, due_date FROM problems_solved WHERE id = $1 AND user_id = $2",
+      [req.params.id, req.session.userId]
+    );
     await db.query(
       "UPDATE problems_solved SET status = 'MASTERED' WHERE id = $1 AND user_id = $2",
       [req.params.id, req.session.userId]
     );
     await markTodayRevisionCompleted(req.session.userId, req.params.id);
+    if (wasDueProblem(previous.rows[0])) updateDashboardDueProblems(req.session.userId, -1);
     res.redirect(`/problems/${req.params.difficulty}`);
   } catch (err) {
     console.error(err);
@@ -585,7 +601,7 @@ router.post("/problems/:difficulty/:id/master", requireAuth, async (req, res) =>
 router.post("/problems/:difficulty/:id/schedule", requireAuth, async (req, res) => {
   try {
     const result = await db.query(
-      `SELECT ps.rating, ps.time, ap.difficulty, COALESCE(ps.topic_id, ap.topic) AS topic_id
+      `SELECT ps.rating, ps.time, ps.status, ps.due_date, ap.difficulty, COALESCE(ps.topic_id, ap.topic) AS topic_id
        FROM problems_solved ps
        JOIN all_problems ap ON ps.platform = ap.platform AND ps.prob_id = ap.id
        WHERE ps.id = $1 AND ps.user_id = $2`,
@@ -607,6 +623,7 @@ router.post("/problems/:difficulty/:id/schedule", requireAuth, async (req, res) 
       [baseStrength, currentThreshold, reviewDays, req.params.id, req.session.userId]
     );
 
+    if (wasDueProblem(problem)) updateDashboardDueProblems(req.session.userId, -1);
     res.redirect(`/problems/${req.params.difficulty}`);
   } catch (err) {
     console.error(err);
@@ -620,7 +637,7 @@ router.post("/problems/:difficulty/:id/revise", requireAuth, async (req, res) =>
 
   try {
     const result = await db.query(
-      `SELECT ps.base_strength, ps.current_threshold, ps.revisions_done, ap.difficulty,
+      `SELECT ps.base_strength, ps.current_threshold, ps.revisions_done, ps.status, ps.due_date, ap.difficulty,
               COALESCE(ps.topic_id, ap.topic) AS topic_id,
               uc.decay_constant
        FROM problems_solved ps
@@ -662,6 +679,7 @@ router.post("/problems/:difficulty/:id/revise", requireAuth, async (req, res) =>
       [nextStatus, newRevisionCount, newThreshold, reviewDays, req.params.id, req.session.userId]
     );
     await markTodayRevisionCompleted(req.session.userId, req.params.id);
+    if (wasDueProblem(problem)) updateDashboardDueProblems(req.session.userId, -1);
     res.redirect(`/problems/${req.params.difficulty}`);
   } catch (err) {
     console.error(err);

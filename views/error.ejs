@@ -1,0 +1,40 @@
+<%- include('partials/header') %>
+
+<section class="error-shell">
+    <span class="eyebrow"><%= title || "Something went wrong" %></span>
+    <h1><%= message || "This page failed to load." %></h1>
+    <p>
+        The website is still running. This failure was isolated and logged so it can be fixed without taking down the whole app.
+    </p>
+
+    <% if (errorLog) { %>
+        <div class="error-reference">
+            <strong>Error log #<%= errorLog.id %></strong>
+            <span><%= new Date(errorLog.created_at).toLocaleString() %></span>
+        </div>
+    <% } %>
+
+    <% if (details) { %>
+        <details class="hint-details" open>
+            <summary>What happened</summary>
+            <div class="note-block">
+                <p><strong>Message:</strong> <%= details.message || "Unknown error" %></p>
+                <% if (details.route) { %><p><strong>Route:</strong> <%= details.route %></p><% } %>
+                <% if (details.method) { %><p><strong>Method:</strong> <%= details.method %></p><% } %>
+                <% if (details.stack) { %>
+                    <p><strong>Stack:</strong></p>
+                    <pre><code><%= details.stack %></code></pre>
+                <% } %>
+            </div>
+        </details>
+    <% } %>
+
+    <div class="page-actions">
+        <a href="/dashboard" class="btn btn-secondary">Back to Dashboard</a>
+        <% if (locals.isOwner) { %>
+            <a href="/admin/stats" class="btn btn-solve">Open Website Stats</a>
+        <% } %>
+    </div>
+</section>
+
+<%- include('partials/footer') %>

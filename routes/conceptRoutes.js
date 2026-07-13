@@ -7,8 +7,14 @@ import {
   getOrCreateTodayConceptPlan,
   markTodayConceptCompleted,
 } from "../services/schedulerService.js";
+import { updateDashboardDueConcepts } from "../services/dashboardCacheService.js";
 
 const router = express.Router();
+
+function wasDueConcept(concept) {
+  if (!concept?.due_date || concept.status === "MASTERED") return false;
+  return new Date(concept.due_date).getTime() <= Date.now();
+}
 
 router.get("/concepts/new", requireAuth, async (req, res) => {
   try {
@@ -126,6 +132,10 @@ router.post("/concepts/:id/update", requireAuth, async (req, res) => {
 
 router.post("/concepts/:id/master", requireAuth, async (req, res) => {
   try {
+    const previous = await db.query(
+      "SELECT status, due_date FROM concepts WHERE id = $1 AND userid = $2",
+      [req.params.id, req.session.userId]
+    );
     const result = await db.query(
       "UPDATE concepts SET status = 'MASTERED' WHERE id = $1 AND userid = $2",
       [req.params.id, req.session.userId]
@@ -134,6 +144,7 @@ router.post("/concepts/:id/master", requireAuth, async (req, res) => {
     if (result.rowCount === 0) return res.status(404).send("Concept not found");
 
     await markTodayConceptCompleted(req.session.userId, req.params.id);
+    if (wasDueConcept(previous.rows[0])) updateDashboardDueConcepts(req.session.userId, -1);
     res.redirect("/concepts");
   } catch (e) {
     console.error("Master concept error:", e);
@@ -145,6 +156,10 @@ router.post("/concepts/:id/rotate", requireAuth, async (req, res) => {
   const days = parseInt(req.body.review_days, 10) || 1;
 
   try {
+    const previous = await db.query(
+      "SELECT status, due_date FROM concepts WHERE id = $1 AND userid = $2",
+      [req.params.id, req.session.userId]
+    );
     const result = await db.query(
       `UPDATE concepts
        SET status = 'LEARNING', review_days = $1, due_date = NOW() + INTERVAL '1 day' * ($1::INTEGER)
@@ -155,6 +170,7 @@ router.post("/concepts/:id/rotate", requireAuth, async (req, res) => {
     if (result.rowCount === 0) return res.status(404).send("Concept not found");
 
     await markTodayConceptCompleted(req.session.userId, req.params.id);
+    if (wasDueConcept(previous.rows[0])) updateDashboardDueConcepts(req.session.userId, -1);
     res.redirect("/concepts");
   } catch (e) {
     console.error("Rotate concept error:", e);

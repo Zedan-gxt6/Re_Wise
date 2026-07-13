@@ -103,6 +103,15 @@ export async function saveSolvedProblem(req, problemLookup) {
     ? 0
     : calculateReviewDays(baseStrength, currentThreshold, decayConstant);
 
+  const previous = await db.query(
+    `SELECT id, created_at, topic_id, status, due_date
+     FROM problems_solved
+     WHERE prob_id = $1 AND user_id = $2 AND platform = $3
+     LIMIT 1`,
+    [problem.id, req.session.userId, problemLookup.platform]
+  );
+  const previousRow = previous.rows[0] || null;
+
   const existing = await db.query(
     `UPDATE problems_solved
      SET rating = $1,
@@ -147,7 +156,21 @@ export async function saveSolvedProblem(req, problemLookup) {
     ]
   );
 
-  if (existing.rows.length > 0) return existing.rows[0];
+  if (existing.rows.length > 0) {
+    return {
+      ...existing.rows[0],
+      dashboardCacheEvent: {
+        type: "updated",
+        problemDifficulty: problem.difficulty,
+        topicId: chosenTopicId,
+        previousTopicId: previousRow?.topic_id || null,
+        previousCreatedAt: previousRow?.created_at || null,
+        previousStatus: previousRow?.status || null,
+        previousDueDate: previousRow?.due_date || null,
+        nextStatus: status,
+      },
+    };
+  }
 
   const result = await db.query(
     `INSERT INTO problems_solved
@@ -177,7 +200,19 @@ export async function saveSolvedProblem(req, problemLookup) {
     ]
   );
 
-  return result.rows[0];
+  return {
+    ...result.rows[0],
+    dashboardCacheEvent: {
+      type: "inserted",
+      problemDifficulty: problem.difficulty,
+      topicId: chosenTopicId,
+      previousTopicId: null,
+      previousCreatedAt: null,
+      previousStatus: null,
+      previousDueDate: null,
+      nextStatus: status,
+    },
+  };
 }
 
 export function validateProblemSolveInput(req, res, next) {

@@ -2,6 +2,10 @@ import express from "express";
 import { db } from "../db/pool.js";
 import { requireAuth } from "../middleware/requireAuth.js";
 import { getOrCreateTodayRevisionPlan } from "../services/schedulerService.js";
+import {
+  getCachedDashboardStats,
+  setCachedDashboardStats,
+} from "../services/dashboardCacheService.js";
 
 const router = express.Router();
 
@@ -10,9 +14,7 @@ router.get("/", (req, res) => {
   return res.redirect("/login");
 });
 
-router.get("/dashboard", requireAuth, async (req, res) => {
-  try {
-    const userId = req.session.userId;
+async function buildDashboardStats(userId) {
     const [
       userRes,
       totalRes,
@@ -82,7 +84,7 @@ router.get("/dashboard", requireAuth, async (req, res) => {
     ]);
     const todayRevisionProblems = await getOrCreateTodayRevisionPlan(userId, dueProblemsRes.rows);
 
-    res.render("index.ejs", {
+    return {
       username: userRes.rows[0]?.username || "Coder",
       totalSolved: parseInt(totalRes.rows[0].count, 10),
       todaySolved: parseInt(todayRes.rows[0].count, 10),
@@ -90,7 +92,22 @@ router.get("/dashboard", requireAuth, async (req, res) => {
       dueConcepts: parseInt(dueConceptsRes.rows[0].count, 10),
       weeklySolved: weeklyRes.rows,
       topicSolved: topicRes.rows,
-    });
+    };
+}
+
+router.get("/dashboard", requireAuth, async (req, res) => {
+  try {
+    const userId = req.session.userId;
+    const cachedStats = getCachedDashboardStats(userId);
+
+    if (cachedStats) {
+      return res.render("index.ejs", cachedStats);
+    }
+
+    const stats = await buildDashboardStats(userId);
+    setCachedDashboardStats(userId, stats);
+
+    res.render("index.ejs", stats);
   } catch (err) {
     console.error("Dashboard statistics query error:", {
       code: err.code,

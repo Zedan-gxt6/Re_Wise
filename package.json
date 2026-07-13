@@ -5,6 +5,9 @@
   "main": "index.js",
   "scripts": {
     "start": "node server.js",
+    "start:pm2": "pm2 start ecosystem.config.cjs",
+    "restart:pm2": "pm2 restart rewise",
+    "logs:pm2": "pm2 logs rewise",
     "db:setup": "node db_setup.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
